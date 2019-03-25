@@ -9,7 +9,7 @@ android {
         minSdkVersion rootProject.minSdkVersion
         targetSdkVersion rootProject.targetSdkVersion
 
-        buildConfigField "String", "URL_API", "\"\""
+        buildConfigField "String", "URL_API", "\"https://api-for-song.herokuapp.com\""
         multiDexEnabled true
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

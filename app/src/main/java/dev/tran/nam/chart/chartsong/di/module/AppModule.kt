@@ -3,9 +3,13 @@ package dev.tran.nam.chart.chartsong.di.module
 import android.app.Application
 import dagger.Binds
 import dagger.Module
+import dagger.android.ContributesAndroidInjector
 import dagger.android.support.AndroidSupportInjectionModule
 import dev.tran.nam.chart.chartsong.view.AppState
+import dev.tran.nam.chart.chartsong.view.main.MainActivity
+import dev.tran.nam.chart.chartsong.view.main.MainActivityModule
 import nam.tran.data.di.DataModule
+import tran.nam.core.di.inject.PerActivity
 import javax.inject.Singleton
 
 /**
@@ -25,4 +29,12 @@ abstract class AppModule {
      * at what is being provided in order to understand its scope.
      */
     internal abstract fun application(app: AppState): Application
+
+    /**
+     * Provides the injector for the [MainActivityModule], which has access to the dependencies
+     * provided by this application instance (singleton scoped objects).
+     */
+    @PerActivity
+    @ContributesAndroidInjector(modules = [MainActivityModule::class])
+    internal abstract fun injectorMainActivity(): MainActivity
 }

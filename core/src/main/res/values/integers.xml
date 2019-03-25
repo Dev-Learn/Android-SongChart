@@ -1,0 +1,4 @@
+<resources>
+    <integer name="animation_time_full">500</integer>
+    <integer name="animation_time_short">100</integer>
+</resources>

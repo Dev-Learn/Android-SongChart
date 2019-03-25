@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="AnimButton">
+        <attr name="ab_font" format="string" />
+        <attr name="ab_drawable_height" format="dimension" />
+        <attr name="ab_drawable_width" format="dimension" />
+        <attr name="ab_should_square" format="boolean" />
+        <attr name="ab_follow_height" format="boolean" />
+    </declare-styleable>
+
+    <declare-styleable name="RippleButton">
+        <attr name="rb_corners" format="dimension" />
+        <attr name="rb_left_top_corner" format="dimension" />
+        <attr name="rb_right_top_corner" format="dimension" />
+        <attr name="rb_left_bottom_corner" format="dimension" />
+        <attr name="rb_right_bottom_corner" format="dimension" />
+        <attr name="rb_stroke_width" format="dimension" />
+        <attr name="rb_stroke_color" format="color" />
+        <attr name="rb_normal_color" format="color" />
+        <attr name="rb_ripple_color" format="color" />
+    </declare-styleable>
+</resources>

@@ -1,0 +1,72 @@
+
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    ext.kotlin_version = '1.3.21'
+    // Define versions in a single place
+    ext {
+        android = '3.2.1'
+        kotlin_version = '1.3.21'
+
+        compileSdkVersion = 28
+        minSdkVersion = 19
+        targetSdkVersion = 28
+
+        multidex = '2.0.1'
+
+        appcompat = '1.1.0-alpha02'
+        material = "1.1.0-alpha03"
+        core_ktx = "1.1.0-alpha04"
+        vectordrawable = "1.0.1"
+        constraint_layout = '2.0.0-alpha3'
+        recyclerview = "1.1.0-alpha02"
+        navigation = '1.0.0-beta02'
+        progress_loading = '2.1.3'
+        glide = "4.8.0"
+
+        gson = '2.8.5'
+        dagger = '2.18'
+        lifecycle = '2.0.0'
+        room = '2.1.0-alpha04'
+        retrofit2 = '2.3.0'
+        okhttp3 = '3.9.0'
+        paging = "2.1.0"
+        sqlcipher = "4.0.1@aar"
+        jetifier = "1.0.0-beta02"
+        leakcanary = "1.5.4"
+
+        junit = "4.12"
+        core_testing = '2.0.0'
+        runner = "1.1.1"
+        espresso = "3.1.1"
+        mockito_core = '2.22.0'
+        robolectric_version = '3.4.2'
+
+        java_version = JavaVersion.VERSION_1_8
+    }
+
+    repositories {
+        google()
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.3.1'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "com.android.tools.build.jetifier:jetifier-processor:$jetifier"
+
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

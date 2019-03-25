@@ -1,0 +1,83 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
+
+android {
+    compileSdkVersion rootProject.compileSdkVersion
+    defaultConfig {
+        minSdkVersion rootProject.minSdkVersion
+        targetSdkVersion rootProject.targetSdkVersion
+
+        buildConfigField "String", "URL_API", "\"\""
+        multiDexEnabled true
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility rootProject.java_version
+        targetCompatibility rootProject.java_version
+    }
+
+    sourceSets {
+        androidTest.java.srcDirs += "src/test-common/java"
+        test.java.srcDirs += "src/test-common/java"
+    }
+
+    packagingOptions {
+        exclude 'META-INF/rxjava.properties'
+    }
+
+    androidExtensions {
+        experimental = true
+    }
+}
+
+kapt {
+    generateStubs = true
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    testImplementation "junit:junit:$rootProject.junit"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+
+    //room sql
+    api "androidx.room:room-runtime:$rootProject.room"
+    testImplementation "androidx.room:room-testing:$rootProject.room"
+    kapt "androidx.room:room-compiler:$rootProject.room"
+
+    // Retrofit2
+    implementation "com.squareup.retrofit2:retrofit:$rootProject.retrofit2"
+    implementation "com.squareup.retrofit2:adapter-rxjava2:$rootProject.retrofit2"
+    api "com.squareup.retrofit2:converter-gson:$rootProject.retrofit2"
+    implementation "com.squareup.retrofit2:adapter-rxjava:$rootProject.retrofit2"
+    implementation "com.squareup.okhttp3:logging-interceptor:$rootProject.okhttp3"
+
+    //dagger
+    kapt "com.google.dagger:dagger-android-processor:$rootProject.dagger"
+    kapt "com.google.dagger:dagger-compiler:$rootProject.dagger"
+    api "com.google.dagger:dagger:$rootProject.dagger"
+    api "com.google.dagger:dagger-android:$rootProject.dagger"
+    api "com.google.dagger:dagger-android-support:$rootProject.dagger"
+    api "androidx.paging:paging-runtime:$rootProject.paging"
+
+    //live data
+    api "androidx.lifecycle:lifecycle-runtime:$rootProject.lifecycle"
+    api "androidx.lifecycle:lifecycle-extensions:$rootProject.lifecycle"
+    kapt "androidx.lifecycle:lifecycle-compiler:$rootProject.lifecycle"
+    implementation "net.zetetic:android-database-sqlcipher:$rootProject.sqlcipher"
+
+    testImplementation "androidx.arch.core:core-testing:$rootProject.core_testing"
+    testImplementation "androidx.test:runner:$rootProject.runner"
+    testImplementation "androidx.test.espresso:espresso-core:$rootProject.espresso"
+    testImplementation "org.mockito:mockito-core:$rootProject.mockito_core"
+}

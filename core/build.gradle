@@ -1,0 +1,91 @@
+apply plugin: 'com.android.feature'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
+
+android {
+    compileSdkVersion rootProject.compileSdkVersion
+    defaultConfig {
+        minSdkVersion rootProject.minSdkVersion
+        targetSdkVersion rootProject.targetSdkVersion
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    dataBinding {
+        enabled = true
+    }
+
+    baseFeature true
+    
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility rootProject.java_version
+        targetCompatibility rootProject.java_version
+    }
+
+    packagingOptions {
+        exclude 'META-INF/rxjava.properties'
+    }
+}
+
+kapt {
+    generateStubs = true
+}
+
+dependencies {
+    api fileTree(include: ['*.jar'], dir: 'libs')
+    testImplementation "junit:junit:$rootProject.junit"
+    androidTestImplementation "androidx.test:runner:$rootProject.runner"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$rootProject.espresso"
+
+    api "androidx.core:core-ktx:$rootProject.core_ktx"
+    api "com.google.android.material:material:$rootProject.material"
+    api "androidx.vectordrawable:vectordrawable:$rootProject.vectordrawable"
+
+    api "androidx.constraintlayout:constraintlayout:$rootProject.constraint_layout"
+    api "androidx.appcompat:appcompat:$rootProject.appcompat"
+    api "androidx.recyclerview:recyclerview:$rootProject.recyclerview"
+    api "android.arch.navigation:navigation-fragment-ktx:$rootProject.navigation"
+    api "android.arch.navigation:navigation-ui-ktx:$rootProject.navigation"
+
+    api "androidx.paging:paging-runtime:$rootProject.paging"
+
+    api "androidx.multidex:multidex:$rootProject.multidex"
+
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+
+    //dagger 2
+    kapt "com.google.dagger:dagger-compiler:$rootProject.dagger"
+    kapt "com.google.dagger:dagger-android-processor:$rootProject.dagger"
+    api "com.google.dagger:dagger:$rootProject.dagger"
+    api "com.google.dagger:dagger-android:$rootProject.dagger"
+    api "com.google.dagger:dagger-android-support:$rootProject.dagger"
+
+    //lifecycle
+    api "androidx.lifecycle:lifecycle-runtime:$rootProject.lifecycle"
+    api "androidx.lifecycle:lifecycle-extensions:$rootProject.lifecycle"
+    kapt "androidx.lifecycle:lifecycle-compiler:$rootProject.lifecycle"
+
+    api "com.github.bumptech.glide:glide:$rootProject.glide"
+    kapt "com.github.bumptech.glide:compiler:$rootProject.glide"
+
+    //loading
+    api "com.wang.avi:library:$rootProject.progress_loading"
+
+    kapt "com.android.tools.build.jetifier:jetifier-core:$rootProject.jetifier"
+    annotationProcessor "com.android.tools.build.jetifier:jetifier-core:$rootProject.jetifier"
+
+    implementation project(':data')
+    application project(':app')
+
+    androidTestImplementation "androidx.arch.core:core-testing:$rootProject.core_testing"
+    androidTestImplementation "androidx.test:runner:$rootProject.runner"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$rootProject.espresso"
+    androidTestImplementation "org.mockito:mockito-core:$rootProject.mockito_core"
+
+}

@@ -15,5 +15,5 @@
             android:id="@+id/chartSongFragment"
             android:name="dev.tran.nam.chart.chartsong.view.main.chart.ChartSongFragment"
             android:label="ChartSongFragment"
-            tools:layout="@layout/fragment_chart_song"/>
+            tools:layout="@layout/fragment_chart_week"/>
 </navigation>

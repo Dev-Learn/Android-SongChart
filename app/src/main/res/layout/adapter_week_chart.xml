@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+        <variable name="week" type="nam.tran.data.model.WeekChart"/>
+    </data>
+
+    <androidx.appcompat.widget.AppCompatTextView
+            android:layout_width="@dimen/positive_150dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="@android:color/black"
+            android:padding="@dimen/positive_10dp"
+            android:textSize="@dimen/text_size_14sp"
+            android:layout_marginEnd="@dimen/positive_5dp"
+            android:layout_marginStart="@dimen/positive_5dp"
+            android:text="@{week.name}"
+            tools:text="Tuần 1 (31/12/2018 - 06/01/2019)"/>
+
+</layout>

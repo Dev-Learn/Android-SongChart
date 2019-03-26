@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+        <variable
+                name="viewModel"
+                type="dev.tran.nam.chart.chartsong.view.main.chart.viewmodel.ChartSongViewModel"/>
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:context="dev.tran.nam.chart.chartsong.view.main.chart.ChartSongFragment">
+
+        <androidx.recyclerview.widget.RecyclerView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/rv_week"
+                android:orientation="horizontal"
+                android:layout_marginTop="@dimen/positive_10dp"
+                tools:listitem="@layout/adapter_week_chart"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"/>
+
+        <View android:layout_width="match_parent"
+              android:layout_height="@dimen/positive_1dp"
+              android:background="@android:color/darker_gray"
+              android:id="@+id/line"
+              android:visibility="gone"
+              android:layout_marginTop="@dimen/positive_5dp"
+              android:layout_marginBottom="@dimen/positive_5dp"
+              app:layout_constraintBottom_toTopOf="@+id/rv_song_week"
+              app:layout_constraintTop_toBottomOf="@+id/rv_week"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:id="@+id/rv_song_week"
+                android:orientation="vertical"
+                tools:listitem="@layout/adapter_song_week"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                app:layout_constraintTop_toBottomOf="@+id/line"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"/>
+
+        <include
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                layout="@layout/loading_state"
+                app:resource="@{viewModel.resource()}"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"/>
+
+        <include
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                layout="@layout/loading_state"
+                app:resource="@{viewModel.resourceChild()}"
+                app:layout_constraintEnd_toEndOf="@+id/rv_song_week"
+                app:layout_constraintStart_toStartOf="@+id/rv_song_week"
+                app:layout_constraintTop_toTopOf="@+id/rv_song_week"
+                app:layout_constraintBottom_toBottomOf="@+id/rv_song_week"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</layout>
+

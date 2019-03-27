@@ -24,6 +24,9 @@ class WeekChartAdapter constructor(appExecutors: AppExecutors, private val dataB
         return oldItem.name == newItem.name
     }
 }) {
+
+    private var position = 0
+
     override fun createBinding(parent: ViewGroup): AdapterWeekChartBinding {
         val binding : AdapterWeekChartBinding = DataBindingUtil.inflate(
             LayoutInflater.from(parent.context),
@@ -40,7 +43,13 @@ class WeekChartAdapter constructor(appExecutors: AppExecutors, private val dataB
         val binding = hoder.binding
         binding.root.setOnClickListener {
             binding.week?.run {
-                week.invoke(this,hoder.adapterPosition)
+                val positionChoose = hoder.adapterPosition
+                if (position != positionChoose){
+                    getItem(position).isChoose = false
+                    position = positionChoose
+                    getItem(position).isChoose = true
+                    week.invoke(this,position)
+                }
             }
         }
         return hoder

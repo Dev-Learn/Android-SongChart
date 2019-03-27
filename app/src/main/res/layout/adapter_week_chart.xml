@@ -7,11 +7,13 @@
 
     <androidx.appcompat.widget.AppCompatTextView
             android:layout_width="@dimen/positive_150dp"
-            android:layout_height="wrap_content"
+            android:layout_height="@dimen/positive_100dp"
             android:gravity="center"
             android:textColor="@android:color/black"
             android:padding="@dimen/positive_10dp"
             android:textSize="@dimen/text_size_14sp"
+            tools:background="@android:color/holo_blue_light"
+            android:background="@{week.isChoose ? @android:color/holo_blue_light : @android:color/white}"
             android:layout_marginEnd="@dimen/positive_5dp"
             android:layout_marginStart="@dimen/positive_5dp"
             android:text="@{week.name}"

@@ -5,22 +5,31 @@ import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import nam.tran.data.api.IApi
 import nam.tran.data.executor.AppExecutors
+import nam.tran.data.model.DownloadStatus.NONE
+import nam.tran.data.model.SongStatus.PLAY
 import nam.tran.data.model.WeekChart
 import nam.tran.data.model.WeekSong
 import nam.tran.data.model.core.state.ErrorResource
-import nam.tran.data.model.core.state.Loading
 import nam.tran.data.model.core.state.Resource
 import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.*
 import javax.inject.Inject
+
 
 class WeekUseCase @Inject internal constructor(private val appExecutors: AppExecutors, private val iApi: IApi) :
     IWeekUseCase {
 
     private var isCancle = false
     private var currentPosition = 0
+    private lateinit var folderPath: String
 
     private val _listWeekChart = MutableLiveData<Resource<List<WeekChart>>>()
     override val listWeekChart: LiveData<Resource<List<WeekChart>>>
@@ -30,14 +39,21 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
     override val listSongWeek: LiveData<Resource<List<WeekSong>>>
         get() = _listSongWeek
 
-    override fun getData(position: Int?) {
+    private val _listSongDownload = MutableLiveData<Vector<WeekSong>>()
+    override val listSongDownload: LiveData<Vector<WeekSong>>
+        get() = _listSongDownload
+
+    override fun getData(position: Int?, pathFolder: String?) {
+        pathFolder?.run {
+            folderPath = this
+        }
         if (position == null) {
             _listSongWeek.value = null
             _listWeekChart.value = Resource.loading()
             iApi.getCharMusic().enqueue(object : Callback<List<WeekChart>> {
                 override fun onFailure(call: Call<List<WeekChart>>, t: Throwable) {
-                    _listWeekChart.value = Resource.error(ErrorResource(t.message, t.hashCode()),retry = {
-                        getData(position)
+                    _listWeekChart.value = Resource.error(ErrorResource(t.message, t.hashCode()), retry = {
+                        getData(position, pathFolder)
                     })
                 }
 
@@ -45,6 +61,7 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
                     if (response.isSuccessful) {
                         val dataResponse = response.body()
                         if (dataResponse?.isNotEmpty() == true) {
+                            dataResponse[0].isChoose = true
                             _listWeekChart.value = Resource.success(dataResponse)
                             getSongWeek(0, dataResponse)
                         }
@@ -53,8 +70,8 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
                             ErrorResource(
                                 JSONObject(response.errorBody()?.string()).getString("message"),
                                 response.code()
-                            ),retry = {
-                                getData(position)
+                            ), retry = {
+                                getData(position, pathFolder)
                             }
                         )
                     }
@@ -71,15 +88,15 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
     }
 
     private fun getSongWeek(position: Int, listDataWeekChart: List<WeekChart>) {
-        synchronized(currentPosition){
+        synchronized(currentPosition) {
             currentPosition = position
         }
         _listSongWeek.value = Resource.loading()
         iApi.getListSongWeek(listDataWeekChart[position].id).enqueue(object : Callback<List<WeekSong>> {
             override fun onFailure(call: Call<List<WeekSong>>, t: Throwable) {
                 if (!isCancle)
-                    _listSongWeek.value = Resource.error(ErrorResource(t.message, t.hashCode()),retry = {
-                        getSongWeek(position,listDataWeekChart)
+                    _listSongWeek.value = Resource.error(ErrorResource(t.message, t.hashCode()), retry = {
+                        getSongWeek(position, listDataWeekChart)
                     })
             }
 
@@ -87,6 +104,13 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
                 if (response.isSuccessful) {
                     val listWeekSong = response.body()
                     listWeekSong?.run {
+                        for (song in this) {
+                            val file = File(folderPath.plus("/").plus(song.song.name).plus(".mp3"))
+                            print(file)
+                            if (file.exists()) {
+                                song.songStatus = PLAY
+                            }
+                        }
                         listDataWeekChart[position].listWeekSong = this
                         _listWeekChart.value = Resource.success(listDataWeekChart)
                         if (!isCancle && currentPosition == position)
@@ -98,8 +122,8 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
                             ErrorResource(
                                 JSONObject(response.errorBody()?.string()).getString("message"),
                                 response.code()
-                            ),retry = {
-                                getSongWeek(position,listDataWeekChart)
+                            ), retry = {
+                                getSongWeek(position, listDataWeekChart)
                             }
                         )
                 }
@@ -114,6 +138,53 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
         data?.data?.run {
             val listSongWeek = this[position].listWeekSong
             _listSongWeek.value = Resource.success(listSongWeek)
+        }
+    }
+
+    override fun downloadMusic(song: WeekSong) {
+        appExecutors.networkIO().execute {
+            var data = listSongDownload.value
+            if (data == null){
+                data = Vector()
+            }
+            data.add(song)
+            try {
+                val url = URL(song.song.link_local)
+                val connection = url.openConnection() as HttpURLConnection
+                connection.connect()
+
+                // this will be useful to display download percentage
+                // might be -1: server did not report the length
+                val fileLength = connection.contentLength
+
+                // download the file
+                val input = connection.inputStream
+                val output = FileOutputStream(folderPath.plus("/").plus(song.song.name).plus(".mp3"))
+
+                val buffer = ByteArray(8192)
+                var total: Long = 0
+                var length: Int
+
+                while (input.read(buffer, 0, 8192).let { length = it; length > 0 }) {
+                    total += length
+                    if (fileLength > 0) {
+                        song.progressDownload = (total * 100 / fileLength).toInt()
+                        _listSongDownload.postValue(data)
+                    }
+                    output.write(buffer, 0, length)
+                }
+
+                output.close()
+                input.close()
+
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+
+            song._songStatus = PLAY
+            song._downloadStatus = NONE
+            _listSongDownload.postValue(data)
+
         }
     }
 }

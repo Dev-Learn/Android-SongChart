@@ -1,12 +1,17 @@
 package dev.tran.nam.chart.chartsong.binding
 
 import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.content.ContextCompat
 import androidx.databinding.BindingAdapter
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import dev.tran.nam.chart.chartsong.R
 import dev.tran.nam.chart.chartsong.di.module.GlideApp
+import nam.tran.data.model.DownloadStatus
+import nam.tran.data.model.DownloadStatus.*
+import nam.tran.data.model.SongStatus
+import nam.tran.data.model.SongStatus.*
 
 object BindingView{
     @JvmStatic
@@ -23,5 +28,45 @@ object BindingView{
                 .transition(DrawableTransitionOptions.withCrossFade()).placeholder(circularProgressDrawable)
                 .error(R.drawable.image_error).into(image)
         }
+    }
+
+    @JvmStatic
+    @BindingAdapter("songStatus")
+    fun updateSongStatus(image : AppCompatImageView,@SongStatus status : Int){
+        val drawable = when(status){
+            DOWNLOAD -> {
+                ContextCompat.getDrawable(image.context,R.drawable.icon_download)
+            }
+            CANCEL_DOWNLOAD -> {
+                ContextCompat.getDrawable(image.context,R.drawable.icon_close)
+            }
+            PLAY -> {
+                ContextCompat.getDrawable(image.context,R.drawable.icon_play)
+            }
+            STOP -> {
+                ContextCompat.getDrawable(image.context,R.drawable.icon_pause)
+            }
+            else -> {
+                ContextCompat.getDrawable(image.context,R.drawable.icon_download)
+            }
+        }
+        image.setImageDrawable(drawable)
+    }
+
+    @JvmStatic
+    @BindingAdapter("downloadStatus")
+    fun updateDownloadStatus(image : AppCompatImageView,@DownloadStatus status : Int){
+        val drawable = when(status){
+            PAUSE -> {
+                ContextCompat.getDrawable(image.context,R.drawable.icon_pause)
+            }
+            RESUME,NONE -> {
+                ContextCompat.getDrawable(image.context,R.drawable.icon_play)
+            }
+            else -> {
+                ContextCompat.getDrawable(image.context,R.drawable.icon_play)
+            }
+        }
+        image.setImageDrawable(drawable)
     }
 }

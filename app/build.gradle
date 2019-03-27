@@ -65,6 +65,7 @@ dependencies {
     androidTestImplementation "androidx.test.espresso:espresso-core:$rootProject.espresso"
     androidTestImplementation "org.mockito:mockito-core:$rootProject.mockito_core"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+
 }
 
 

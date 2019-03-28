@@ -5,10 +5,16 @@ import androidx.databinding.Bindable
 import nam.tran.data.BR
 import nam.tran.data.model.DownloadStatus.PAUSE
 import nam.tran.data.model.SongStatus.PLAY
+import nam.tran.data.model.core.state.ErrorResource
 
 data class WeekSong(
-    val song: Song, val position: Int, val hierarchical: Int, val hierarchical_number: Int?
-    , @SongStatus var _songStatus: Int = PLAY, @DownloadStatus var _downloadStatus: Int = PAUSE, var _progressDownload : Int
+    val song: Song,
+    val position: Int,
+    val hierarchical: Int,
+    val hierarchical_number: Int?
+    , @SongStatus var _songStatus: Int = PLAY, @DownloadStatus var _downloadStatus: Int = PAUSE,
+    var _progressDownload: Int,
+    var errorResource: ErrorResource? = null
 ) : BaseObservable() {
 
     @SongStatus
@@ -27,7 +33,7 @@ data class WeekSong(
             notifyPropertyChanged(BR.downloadStatus)
         }
 
-    var progressDownload : Int
+    var progressDownload: Int
         @Bindable get() = _progressDownload
         set(value) {
             _progressDownload = value

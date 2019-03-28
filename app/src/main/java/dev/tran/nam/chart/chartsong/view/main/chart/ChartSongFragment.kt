@@ -3,6 +3,7 @@ package dev.tran.nam.chart.chartsong.view.main.chart
 import android.os.Bundle
 import android.os.Environment
 import android.view.View
+import android.widget.Toast
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
@@ -106,14 +107,16 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
         })
 
         mViewModel?.resultListDownload?.observe(viewLifecycleOwner, Observer {
+            Logger.debug(it)
             it?.run {
-                synchronized(this){
-                    for (item in this){
-                        val position = adapterSongWeek.currentList.indexOf(item)
-                        if (position != -1){
-                            Logger.debug(position)
-                            adapterSongWeek.updateItem(position,item)
-                        }
+                for (item in this){
+                    if (item.errorResource != null){
+                        Toast.makeText(requireContext(),item.errorResource?.message,Toast.LENGTH_SHORT).show()
+                    }
+                    val position = adapterSongWeek.currentList.indexOf(item)
+                    if (position != -1){
+                        Logger.debug(position)
+                        adapterSongWeek.updateItem(position,item)
                     }
                 }
             }

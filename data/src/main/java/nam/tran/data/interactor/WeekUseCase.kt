@@ -3,10 +3,11 @@ package nam.tran.data.interactor
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
+import nam.tran.data.Logger
 import nam.tran.data.api.IApi
 import nam.tran.data.executor.AppExecutors
 import nam.tran.data.model.DownloadStatus.NONE
-import nam.tran.data.model.SongStatus.PLAY
+import nam.tran.data.model.SongStatus.*
 import nam.tran.data.model.WeekChart
 import nam.tran.data.model.WeekSong
 import nam.tran.data.model.core.state.ErrorResource
@@ -142,12 +143,13 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
     }
 
     override fun downloadMusic(song: WeekSong) {
+        var data = listSongDownload.value
+        if (data == null){
+            data = Vector()
+        }
+        data.add(song)
         appExecutors.networkIO().execute {
-            var data = listSongDownload.value
-            if (data == null){
-                data = Vector()
-            }
-            data.add(song)
+            val path = folderPath.plus("/").plus(song.song.name).plus(".mp3")
             try {
                 val url = URL(song.song.link_local)
                 val connection = url.openConnection() as HttpURLConnection
@@ -159,13 +161,13 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
 
                 // download the file
                 val input = connection.inputStream
-                val output = FileOutputStream(folderPath.plus("/").plus(song.song.name).plus(".mp3"))
+                val output = FileOutputStream(path)
 
-                val buffer = ByteArray(8192)
+                val buffer = ByteArray(1024)
                 var total: Long = 0
                 var length: Int
 
-                while (input.read(buffer, 0, 8192).let { length = it; length > 0 }) {
+                while (input.read(buffer, 0, 1024).let { length = it; length > 0 }) {
                     total += length
                     if (fileLength > 0) {
                         song.progressDownload = (total * 100 / fileLength).toInt()
@@ -177,13 +179,23 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
                 output.close()
                 input.close()
 
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
+                song._songStatus = PLAY
+                song._downloadStatus = NONE
+                _listSongDownload.postValue(data)
 
-            song._songStatus = PLAY
-            song._downloadStatus = NONE
-            _listSongDownload.postValue(data)
+            } catch (e: IOException) {
+                Logger.debug(e)
+                song._songStatus = DOWNLOAD
+                song._downloadStatus = NONE
+                song.errorResource = ErrorResource(e.message)
+                Logger.debug(data)
+                _listSongDownload.postValue(data)
+                val file = File(path)
+                if (file.exists()){
+                    val result = file.delete()
+                    Logger.debug(result)
+                }
+            }
 
         }
     }

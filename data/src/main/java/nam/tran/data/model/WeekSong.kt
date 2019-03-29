@@ -3,8 +3,8 @@ package nam.tran.data.model
 import androidx.databinding.BaseObservable
 import androidx.databinding.Bindable
 import nam.tran.data.BR
-import nam.tran.data.model.DownloadStatus.PAUSE
-import nam.tran.data.model.SongStatus.PLAY
+import nam.tran.data.model.DownloadStatus.NONE
+import nam.tran.data.model.SongStatus.NONE_STATUS
 import nam.tran.data.model.core.state.ErrorResource
 
 data class WeekSong(
@@ -12,7 +12,7 @@ data class WeekSong(
     val position: Int,
     val hierarchical: Int,
     val hierarchical_number: Int?
-    , @SongStatus var _songStatus: Int = PLAY, @DownloadStatus var _downloadStatus: Int = PAUSE,
+    , @SongStatus var _songStatus: Int = NONE_STATUS, @DownloadStatus var _downloadStatus: Int = NONE,
     var _progressDownload: Int,
     var errorResource: ErrorResource? = null
 ) : BaseObservable() {

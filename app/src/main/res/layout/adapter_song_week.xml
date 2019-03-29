@@ -105,7 +105,7 @@
                 android:enabled="false"
                 android:padding="@dimen/positive_10dp"
                 android:progress="@{song.progressDownload}"
-                android:visibility="@{song.songStatus == SongStatus.CANCEL_DOWNLOAD ? View.VISIBLE : View.GONE}"
+                android:visibility="@{song.songStatus == SongStatus.DOWNLOADING ? View.VISIBLE : View.GONE}"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/iv_song"/>

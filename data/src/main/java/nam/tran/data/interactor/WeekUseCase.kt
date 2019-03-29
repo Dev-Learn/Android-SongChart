@@ -6,7 +6,9 @@ import androidx.lifecycle.MutableLiveData
 import nam.tran.data.Logger
 import nam.tran.data.api.IApi
 import nam.tran.data.executor.AppExecutors
+import nam.tran.data.model.DownloadData
 import nam.tran.data.model.DownloadStatus.NONE
+import nam.tran.data.model.DownloadStatus.PAUSE
 import nam.tran.data.model.SongStatus.*
 import nam.tran.data.model.WeekChart
 import nam.tran.data.model.WeekSong
@@ -22,6 +24,7 @@ import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 
@@ -31,6 +34,7 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
     private var isCancle = false
     private var currentPosition = 0
     private lateinit var folderPath: String
+    private val currentDownloadMap: MutableMap<Int, DownloadData> = ConcurrentHashMap()
 
     private val _listWeekChart = MutableLiveData<Resource<List<WeekChart>>>()
     override val listWeekChart: LiveData<Resource<List<WeekChart>>>
@@ -40,8 +44,8 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
     override val listSongWeek: LiveData<Resource<List<WeekSong>>>
         get() = _listSongWeek
 
-    private val _listSongDownload = MutableLiveData<Vector<WeekSong>>()
-    override val listSongDownload: LiveData<Vector<WeekSong>>
+    private val _listSongDownload = MutableLiveData<Vector<DownloadData>>()
+    override val listSongDownload: LiveData<Vector<DownloadData>>
         get() = _listSongDownload
 
     override fun getData(position: Int?, pathFolder: String?) {
@@ -106,7 +110,7 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
                     val listWeekSong = response.body()
                     listWeekSong?.run {
                         for (song in this) {
-                            val file = File(folderPath.plus("/").plus(song.song.name).plus(".mp3"))
+                            val file = File(folderPath.plus("/").plus(song.song.id).plus(".mp3"))
                             print(file)
                             if (file.exists()) {
                                 song.songStatus = PLAY
@@ -142,36 +146,69 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
         }
     }
 
-    override fun downloadMusic(song: WeekSong) {
-        var data = listSongDownload.value
-        if (data == null){
-            data = Vector()
+    override fun removeTaskDownload(item: DownloadData?) {
+        currentDownloadMap.remove(item?.id)
+        listSongDownload.value?.run {
+            if(this.contains(item)){
+                _listSongDownload.postValue(this)
+            }
         }
-        data.add(song)
+    }
+
+    override fun downloadMusic(id: Int, url: String) {
+        val fileDownLoad = DownloadData(id)
+        var listDownLoad = listSongDownload.value
+        if (listDownLoad == null)
+            listDownLoad = Vector()
+        listDownLoad.add(fileDownLoad)
+        currentDownloadMap[id] = fileDownLoad
+
         appExecutors.networkIO().execute {
-            val path = folderPath.plus("/").plus(song.song.name).plus(".mp3")
+            val pathFile = folderPath.plus("/").plus(id).plus(".mp3")
+            var fileLenght: Long = 0
+            val file = File(pathFile)
+            if (file.exists()){
+                fileLenght = file.length()
+            }
+            var isCancel: Boolean = false
+            var isPause: Boolean = false
             try {
-                val url = URL(song.song.link_local)
-                val connection = url.openConnection() as HttpURLConnection
+                val connection = URL(url).openConnection() as HttpURLConnection
+                if (fileLenght > 0){
+                    connection.setRequestProperty("Range", "bytes=$fileLenght -")
+                }
                 connection.connect()
 
                 // this will be useful to display download percentage
                 // might be -1: server did not report the length
-                val fileLength = connection.contentLength
+                var totalfileLength = connection.contentLength
+                Logger.debug(totalfileLength)
+                if (fileLenght > 0)
+                    totalfileLength += fileLenght.toInt()
 
                 // download the file
                 val input = connection.inputStream
-                val output = FileOutputStream(path)
+                val output = FileOutputStream(pathFile)
 
-                val buffer = ByteArray(1024)
-                var total: Long = 0
+                val buffer = ByteArray(100)
+                var total = 0
                 var length: Int
 
-                while (input.read(buffer, 0, 1024).let { length = it; length > 0 }) {
+                //https://stackoverflow.com/questions/6237079/resume-http-file-download-in-java
+
+                while (input.read(buffer, 0, 100).let { length = it; length > 0 }) {
+                    if (fileDownLoad.songStatus == CANCEL_DOWNLOAD) {
+                        isCancel = true
+                        break
+                    }
+                    if (fileDownLoad.downloadStatus == PAUSE) {
+                        isPause = true
+                        break
+                    }
                     total += length
-                    if (fileLength > 0) {
-                        song.progressDownload = (total * 100 / fileLength).toInt()
-                        _listSongDownload.postValue(data)
+                    if (totalfileLength > 0) {
+                        fileDownLoad.progress = ((fileLenght + total) * 100 / totalfileLength).toInt()
+                        _listSongDownload.postValue(listDownLoad)
                     }
                     output.write(buffer, 0, length)
                 }
@@ -179,24 +216,81 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
                 output.close()
                 input.close()
 
-                song._songStatus = PLAY
-                song._downloadStatus = NONE
-                _listSongDownload.postValue(data)
-
+                Logger.debug(isCancel)
+                Logger.debug(isPause)
+                if (isCancel) {
+                    cancelComplete(fileDownLoad, listDownLoad,pathFile)
+                } else if (isPause) {
+                    pauseComplete()
+                } else {
+                    downloadComplete(fileDownLoad, listDownLoad)
+                }
             } catch (e: IOException) {
                 Logger.debug(e)
-                song._songStatus = DOWNLOAD
-                song._downloadStatus = NONE
-                song.errorResource = ErrorResource(e.message)
-                Logger.debug(data)
-                _listSongDownload.postValue(data)
-                val file = File(path)
-                if (file.exists()){
-                    val result = file.delete()
-                    Logger.debug(result)
+                downloadError(fileDownLoad, listDownLoad, e)
+            }
+        }
+    }
+
+    private fun pauseComplete() {
+
+    }
+
+    override fun updateStatusDownload(id: Int, status: Int,isDownload : Boolean) {
+        if (currentDownloadMap.containsKey(id)) {
+            val fileDownLoad = currentDownloadMap[id]
+            fileDownLoad?.apply {
+                if (isDownload)
+                    downloadStatus = status
+                else{
+                    songStatus = status
+                    if (songStatus == CANCEL_DOWNLOAD && downloadStatus == PAUSE){
+                        val listdata = listSongDownload.value
+                        listdata?.run {
+                            val pathFile = folderPath.plus("/").plus(id).plus(".mp3")
+                            cancelComplete(fileDownLoad, this, pathFile)
+                        }
+                    }
                 }
             }
-
         }
+    }
+
+    private fun downloadError(
+        fileDownLoad: DownloadData,
+        listDownLoad: Vector<DownloadData>,
+        error: IOException
+    ) {
+        fileDownLoad.songStatus = NONE_STATUS
+        fileDownLoad.downloadStatus = NONE
+        fileDownLoad.errorResource = ErrorResource(error.message)
+        Logger.debug(listDownLoad)
+        _listSongDownload.postValue(listDownLoad)
+    }
+
+    private fun downloadComplete(
+        fileDownLoad: DownloadData,
+        listDownLoad: Vector<DownloadData>
+    ) {
+        fileDownLoad.songStatus = PLAY
+        fileDownLoad.downloadStatus = NONE
+        Logger.debug(listDownLoad)
+        _listSongDownload.postValue(listDownLoad)
+    }
+
+    private fun cancelComplete(
+        fileDownLoad: DownloadData,
+        listDownLoad: Vector<DownloadData>,
+        pathFile: String
+    ) {
+        val file = File(pathFile)
+        if (file.exists()) {
+            val result = file.delete()
+            Logger.debug(result)
+        }
+        fileDownLoad.songStatus = NONE_STATUS
+        fileDownLoad.downloadStatus = NONE
+        fileDownLoad.progress = 0
+        _listSongDownload.postValue(listDownLoad)
     }
 }

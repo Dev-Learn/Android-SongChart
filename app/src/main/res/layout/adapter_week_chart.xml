@@ -12,7 +12,7 @@
             android:textColor="@android:color/black"
             android:padding="@dimen/positive_10dp"
             android:textSize="@dimen/text_size_14sp"
-            tools:background="@android:color/holo_blue_light"
+            tools:background="@android:color/white"
             android:background="@{week.isChoose ? @android:color/holo_blue_light : @android:color/white}"
             android:layout_marginEnd="@dimen/positive_5dp"
             android:layout_marginStart="@dimen/positive_5dp"

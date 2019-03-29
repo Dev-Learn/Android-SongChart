@@ -7,10 +7,10 @@ import java.lang.annotation.RetentionPolicy;
 
 import static nam.tran.data.model.DownloadStatus.*;
 
-@IntDef({NONE, PAUSE, RESUME})
+@IntDef({NONE, RUNNING, PAUSE})
 @Retention(RetentionPolicy.SOURCE)
 public @interface DownloadStatus {
     int NONE = 0;
-    int PAUSE = 1111;
-    int RESUME = 2222;
+    int RUNNING = 1111;
+    int PAUSE = 2222;
 }

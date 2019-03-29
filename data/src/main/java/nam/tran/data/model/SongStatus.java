@@ -7,12 +7,13 @@ import java.lang.annotation.RetentionPolicy;
 
 import static nam.tran.data.model.SongStatus.*;
 
-@IntDef({DOWNLOAD, CANCEL_DOWNLOAD,ERROR, PLAY, STOP})
+@IntDef({NONE_STATUS,DOWNLOADING, CANCEL_DOWNLOAD,ERROR, PLAY, STOP})
 @Retention(RetentionPolicy.SOURCE)
 public @interface SongStatus {
-    int DOWNLOAD = 0;
-    int CANCEL_DOWNLOAD = 111;
-    int ERROR = 222;
-    int PLAY = 333;
-    int STOP = 444;
+    int NONE_STATUS = 0;
+    int DOWNLOADING = 111;
+    int CANCEL_DOWNLOAD = 222;
+    int ERROR = 333;
+    int PLAY = 444;
+    int STOP = 555;
 }

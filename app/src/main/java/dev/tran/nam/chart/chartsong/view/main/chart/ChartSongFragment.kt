@@ -40,14 +40,13 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
         val adapterSongWeek = SongWeekAdapter(appExecutors, dataBindingComponent, { item, position ->
             run {
                 when (item.songStatus) {
-                    DOWNLOAD -> {
-                        item.songStatus = CANCEL_DOWNLOAD
-                        item.downloadStatus = PAUSE
+                    NONE_STATUS -> {
+                        item.songStatus = DOWNLOADING
+                        item.downloadStatus = RUNNING
                         mViewModel?.downloadSong(item)
                     }
-                    CANCEL_DOWNLOAD -> {
-                        item.songStatus = DOWNLOAD
-                        item.downloadStatus = NONE
+                    DOWNLOADING -> {
+                        mViewModel?.updateStatus(item.song.id, CANCEL_DOWNLOAD)
                     }
                     PLAY -> {
                         item.songStatus = STOP
@@ -61,13 +60,16 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
         }, { item, position ->
             run {
                 when (item.downloadStatus) {
-                    PAUSE -> {
-                        item.downloadStatus = RESUME
-                    }
-                    RESUME -> {
+                    RUNNING -> {
                         item.downloadStatus = PAUSE
+                        mViewModel?.updateStatus(item.song.id,PAUSE,true)
+                    }
+                    PAUSE -> {
+                        item.downloadStatus = RUNNING
+                        mViewModel?.downloadSong(item)
                     }
                     NONE -> {}
+                    else -> {}
                 }
             }
         })
@@ -107,17 +109,16 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
         })
 
         mViewModel?.resultListDownload?.observe(viewLifecycleOwner, Observer {
-            Logger.debug(it)
-            it?.run {
-                for (item in this){
-                    if (item.errorResource != null){
-                        Toast.makeText(requireContext(),item.errorResource?.message,Toast.LENGTH_SHORT).show()
-                    }
-                    val position = adapterSongWeek.currentList.indexOf(item)
-                    if (position != -1){
-                        Logger.debug(position)
-                        adapterSongWeek.updateItem(position,item)
-                    }
+            for (item in it){
+                if (item.errorResource != null){
+                    Toast.makeText(requireContext(),item.errorResource?.message,Toast.LENGTH_SHORT).show()
+                }
+                if (item.songStatus == CANCEL_DOWNLOAD){
+                    mViewModel?.removeTaskDownload(item)
+                }
+                val index = adapterSongWeek.getPosition(item.id)
+                if (index != -1){
+                    adapterSongWeek.updateItem(index,item.progress,item.songStatus,item.downloadStatus)
                 }
             }
         })

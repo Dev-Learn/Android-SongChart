@@ -60,10 +60,18 @@ class SongWeekAdapter constructor(
         binding.song = item
     }
 
-    fun updateItem(position: Int, item: WeekSong) {
-        val data = getItem(position)
-        data.progressDownload = item.progressDownload
-        data.downloadStatus = item.downloadStatus
-        data.songStatus = item.songStatus
+    fun updateItem(index: Int, progressDownload : Int,songStatus : Int,downloadStatus : Int) {
+        val data = getItem(index)
+        data.progressDownload = progressDownload
+        data.downloadStatus = downloadStatus
+        data.songStatus = songStatus
+    }
+
+    fun getPosition(idSong : Int) : Int{
+        currentList.forEachIndexed { index, weekSong ->
+            if (weekSong.song.id == idSong)
+                return index
+        }
+        return -1
     }
 }

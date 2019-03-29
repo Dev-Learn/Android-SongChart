@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">ChartSong</string>
+    <string name="error"><b>Error</b> :%s</string>
 </resources>

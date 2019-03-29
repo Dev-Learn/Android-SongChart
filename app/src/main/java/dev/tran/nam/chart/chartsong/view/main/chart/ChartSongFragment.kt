@@ -3,7 +3,6 @@ package dev.tran.nam.chart.chartsong.view.main.chart
 import android.os.Bundle
 import android.os.Environment
 import android.view.View
-import android.widget.Toast
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
@@ -26,6 +25,8 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
 
     private val dataBindingComponent = FragmentDataBindingComponent(this)
 
+    private lateinit var adapterWeekChart: WeekChartAdapter
+
     override fun initViewModel(factory: ViewModelProvider.Factory?) {
         mViewModel = ViewModelProviders.of(this, factory).get(ChartSongViewModel::class.java)
     }
@@ -45,7 +46,7 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
                         item.downloadStatus = RUNNING
                         mViewModel?.downloadSong(item)
                     }
-                    DOWNLOADING -> {
+                    DOWNLOADING, ERROR -> {
                         mViewModel?.updateStatus(item.song.id, CANCEL_DOWNLOAD)
                     }
                     PLAY -> {
@@ -66,7 +67,7 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
                     }
                     PAUSE -> {
                         item.downloadStatus = RUNNING
-                        mViewModel?.downloadSong(item)
+                        mViewModel?.downloadSong(item, true)
                     }
                     NONE -> {}
                     else -> {}
@@ -75,7 +76,11 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
         })
         mViewDataBinding?.rvSongWeek?.adapter = adapterSongWeek
 
-        val adapterWeekChart = WeekChartAdapter(appExecutors, dataBindingComponent) { it, position ->
+        adapterWeekChart = WeekChartAdapter(
+            appExecutors,
+            dataBindingComponent,
+            savedInstanceState?.getInt("weekSelect", 0) ?: 0
+        ) { it, position ->
             if (!it.listWeekSong.isNullOrEmpty()) {
                 mViewModel?.getDataExist(position)
             } else {
@@ -109,16 +114,15 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
         })
 
         mViewModel?.resultListDownload?.observe(viewLifecycleOwner, Observer {
-            for (item in it){
-                if (item.errorResource != null){
-                    Toast.makeText(requireContext(),item.errorResource?.message,Toast.LENGTH_SHORT).show()
-                }
-                if (item.songStatus == CANCEL_DOWNLOAD){
-                    mViewModel?.removeTaskDownload(item)
-                }
-                val index = adapterSongWeek.getPosition(item.id)
-                if (index != -1){
-                    adapterSongWeek.updateItem(index,item.progress,item.songStatus,item.downloadStatus)
+            it?.run {
+                forEach {
+                    if (it.songStatus == CANCEL_DOWNLOAD) {
+                        mViewModel?.removeTaskDownload(it)
+                    }
+                    val index = adapterSongWeek.getPosition(it.id)
+                    if (index != -1) {
+                        adapterSongWeek.updateItem(index, it.progress, it.songStatus, it.downloadStatus)
+                    }
                 }
             }
         })
@@ -133,5 +137,9 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
             }
             mViewModel?.getData(pathFolder = folder.absolutePath)
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putInt("weekSelect", adapterWeekChart.getPositionSelect())
     }
 }

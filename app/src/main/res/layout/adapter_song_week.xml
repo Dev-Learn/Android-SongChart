@@ -10,6 +10,7 @@
         <import type="nam.tran.data.model.DownloadStatus"/>
         <import type="nam.tran.data.model.SongStatus"/>
         <import type="android.view.View"/>
+        <import type="nam.tran.data.model.core.state.ErrorResource"/>
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -37,6 +38,7 @@
                 android:ellipsize="end"
                 android:padding="@dimen/positive_5dp"
                 android:textSize="@dimen/text_size_10sp"
+                android:textStyle="bold"
                 android:text="@{song.song.name}"
                 app:layout_constraintStart_toEndOf="@+id/iv_song"
                 app:layout_constraintEnd_toStartOf="@+id/tv_position"
@@ -105,10 +107,22 @@
                 android:enabled="false"
                 android:padding="@dimen/positive_10dp"
                 android:progress="@{song.progressDownload}"
-                android:visibility="@{song.songStatus == SongStatus.DOWNLOADING ? View.VISIBLE : View.GONE}"
+                android:visibility="@{song.songStatus == SongStatus.DOWNLOADING || song.songStatus == SongStatus.ERROR ? View.VISIBLE : View.GONE}"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/iv_song"/>
+
+        <androidx.appcompat.widget.AppCompatTextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                tools:text="ERROR"
+                android:visibility="@{song.songStatus == SongStatus.ERROR ? View.VISIBLE : View.GONE}"
+                android:padding="@dimen/positive_10dp"
+                android:textColor="@android:color/black"
+                android:text="@{String.format(@string/error, song.errorResource.message)}"
+                app:layout_constraintTop_toBottomOf="@+id/progress_download"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

@@ -7,8 +7,7 @@ import nam.tran.data.Logger
 import nam.tran.data.api.IApi
 import nam.tran.data.executor.AppExecutors
 import nam.tran.data.model.DownloadData
-import nam.tran.data.model.DownloadStatus.NONE
-import nam.tran.data.model.DownloadStatus.PAUSE
+import nam.tran.data.model.DownloadStatus.*
 import nam.tran.data.model.SongStatus.*
 import nam.tran.data.model.WeekChart
 import nam.tran.data.model.WeekSong
@@ -147,21 +146,30 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
     }
 
     override fun removeTaskDownload(item: DownloadData?) {
-        currentDownloadMap.remove(item?.id)
+        Logger.debug(item)
+        if (currentDownloadMap.containsValue(item))
+            currentDownloadMap.remove(item?.id)
         listSongDownload.value?.run {
             if(this.contains(item)){
+                this.remove(item)
                 _listSongDownload.postValue(this)
             }
         }
     }
 
-    override fun downloadMusic(id: Int, url: String) {
-        val fileDownLoad = DownloadData(id)
+    override fun downloadMusic(id: Int, url: String, resume: Boolean) {
+        var fileDownLoad = DownloadData(id)
         var listDownLoad = listSongDownload.value
         if (listDownLoad == null)
             listDownLoad = Vector()
-        listDownLoad.add(fileDownLoad)
-        currentDownloadMap[id] = fileDownLoad
+        if (!currentDownloadMap.contains(id)){
+            listDownLoad.add(fileDownLoad)
+            currentDownloadMap[id] = fileDownLoad
+        }else{
+            fileDownLoad = currentDownloadMap.getValue(id)
+            fileDownLoad.songStatus = DOWNLOADING
+            fileDownLoad.downloadStatus = RUNNING
+        }
 
         appExecutors.networkIO().execute {
             val pathFile = folderPath.plus("/").plus(id).plus(".mp3")
@@ -188,7 +196,7 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
 
                 // download the file
                 val input = connection.inputStream
-                val output = FileOutputStream(pathFile)
+                val output = FileOutputStream(pathFile,fileLenght > 0)
 
                 val buffer = ByteArray(100)
                 var total = 0
@@ -261,8 +269,8 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
         listDownLoad: Vector<DownloadData>,
         error: IOException
     ) {
-        fileDownLoad.songStatus = NONE_STATUS
-        fileDownLoad.downloadStatus = NONE
+        fileDownLoad.songStatus = ERROR
+        fileDownLoad.downloadStatus = PAUSE
         fileDownLoad.errorResource = ErrorResource(error.message)
         Logger.debug(listDownLoad)
         _listSongDownload.postValue(listDownLoad)

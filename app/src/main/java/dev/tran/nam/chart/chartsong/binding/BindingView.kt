@@ -34,10 +34,10 @@ object BindingView{
     @BindingAdapter("songStatus")
     fun updateSongStatus(image : AppCompatImageView,@SongStatus status : Int){
         val drawable = when(status){
-            NONE_STATUS, ERROR, CANCEL_DOWNLOAD -> {
+            NONE_STATUS, CANCEL_DOWNLOAD -> {
                 ContextCompat.getDrawable(image.context,R.drawable.icon_download)
             }
-            DOWNLOADING -> {
+            DOWNLOADING ,ERROR-> {
                 ContextCompat.getDrawable(image.context,R.drawable.icon_close)
             }
             PLAY -> {

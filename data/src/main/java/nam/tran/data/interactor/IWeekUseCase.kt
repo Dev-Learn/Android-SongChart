@@ -13,7 +13,7 @@ interface IWeekUseCase{
     val listSongDownload : LiveData<Vector<DownloadData>>
     fun getData(position: Int? = null, pathFolder: String? = null)
     fun getDataExist(position: Int)
-    fun downloadMusic(id : Int,url : String)
+    fun downloadMusic(id: Int, url: String, resume: Boolean)
     fun updateStatusDownload(id: Int,status : Int,isDownload : Boolean)
     fun removeTaskDownload(item: DownloadData?)
 }

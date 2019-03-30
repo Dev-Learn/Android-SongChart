@@ -43,7 +43,7 @@ object BindingView{
             PLAY -> {
                 ContextCompat.getDrawable(image.context,R.drawable.icon_play)
             }
-            STOP -> {
+            PAUSE -> {
                 ContextCompat.getDrawable(image.context,R.drawable.icon_pause)
             }
             else -> {

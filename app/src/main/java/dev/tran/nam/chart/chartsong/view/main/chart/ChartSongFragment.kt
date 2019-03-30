@@ -38,6 +38,14 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         mViewDataBinding?.viewModel = mViewModel
 
+        val path = Environment.getExternalStorageDirectory().absolutePath + File.separator + "ChartSong"
+        Logger.debug(path)
+        val folder = File(path)
+        if (!folder.exists()){
+            val success = folder.mkdirs()
+            print(success)
+        }
+
         val adapterSongWeek = SongWeekAdapter(appExecutors, dataBindingComponent, { item, position ->
             run {
                 when (item.songStatus) {
@@ -50,10 +58,10 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
                         mViewModel?.updateStatus(item.song.id, CANCEL_DOWNLOAD)
                     }
                     PLAY -> {
-                        item.songStatus = STOP
+                        mViewModel?.playSong(item.song.name,item.song.id,folder.absolutePath)
                     }
-                    STOP -> {
-                        item.songStatus = PLAY
+                    PAUSE -> {
+
                     }
                     else -> {}
                 }
@@ -128,13 +136,6 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
         })
 
         if (savedInstanceState == null){
-            val path = Environment.getExternalStorageDirectory().absolutePath + File.separator + "ChartSong"
-            Logger.debug(path)
-            val folder = File(path)
-            if (!folder.exists()){
-                val success = folder.mkdirs()
-                print(success)
-            }
             mViewModel?.getData(pathFolder = folder.absolutePath)
         }
     }

@@ -10,7 +10,7 @@ import java.util.*
 interface IWeekUseCase{
     val listWeekChart : LiveData<Resource<List<WeekChart>>>
     val listSongWeek : LiveData<Resource<List<WeekSong>>>
-    val listSongDownload : LiveData<Vector<DownloadData>>
+    val listSongDownload : LiveData<DownloadData>
     fun getData(position: Int? = null, pathFolder: String? = null)
     fun getDataExist(position: Int)
     fun downloadMusic(id: Int, url: String, resume: Boolean)

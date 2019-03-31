@@ -15,14 +15,14 @@ import tran.nam.common.DataBoundViewHolder
 
 class SongWeekAdapter constructor(
     appExecutors: AppExecutors, private val dataBindingComponent: DataBindingComponent
-    , val songStatusClick: (WeekSong, Int) -> Unit, val downloadStatusClick: (WeekSong, Int) -> Unit
+    , val songStatusClick: (WeekSong, Int) -> Unit, val downloadStatusClick: (WeekSong, Int) -> Unit, val stopMusicClick: (WeekSong, Int) -> Unit
 ) : DataBoundListAdapter<WeekSong, AdapterSongWeekBinding>(appExecutors, object : DiffUtil.ItemCallback<WeekSong>() {
     override fun areItemsTheSame(oldItem: WeekSong, newItem: WeekSong): Boolean {
         return oldItem.song == newItem.song
     }
 
     override fun areContentsTheSame(oldItem: WeekSong, newItem: WeekSong): Boolean {
-        return oldItem.position == newItem.position && oldItem.hierarchical == newItem.hierarchical
+        return oldItem.position == newItem.position && oldItem.songStatus == newItem.songStatus && oldItem.downloadStatus == newItem.downloadStatus
     }
 
 }) {
@@ -53,6 +53,11 @@ class SongWeekAdapter constructor(
         binding.progressDownload.setOnTouchListener { v, event ->
             return@setOnTouchListener true
         }
+        binding.ivCloseSong.setOnClickListener {
+            binding.song?.let {
+                stopMusicClick.invoke(it, hoder.adapterPosition)
+            }
+        }
         return hoder
     }
 
@@ -60,10 +65,15 @@ class SongWeekAdapter constructor(
         binding.song = item
     }
 
-    fun updateItem(index: Int, progressDownload : Int,songStatus : Int,downloadStatus : Int) {
+    fun updateItemDownload(index: Int, progressDownload : Int, songStatus : Int, downloadStatus : Int) {
         val data = getItem(index)
         data.progressDownload = progressDownload
         data.downloadStatus = downloadStatus
+        data.songStatus = songStatus
+    }
+
+    fun updateItemPlay(index: Int, songStatus : Int) {
+        val data = getItem(index)
         data.songStatus = songStatus
     }
 

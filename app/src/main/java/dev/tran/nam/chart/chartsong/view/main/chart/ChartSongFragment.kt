@@ -3,10 +3,12 @@ package dev.tran.nam.chart.chartsong.view.main.chart
 import android.os.Bundle
 import android.os.Environment
 import android.view.View
+import android.widget.Toast
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import dev.tran.nam.chart.chartsong.R
+import dev.tran.nam.chart.chartsong.controller.NotificationController
 import dev.tran.nam.chart.chartsong.databinding.FragmentChartWeekBinding
 import dev.tran.nam.chart.chartsong.view.main.chart.viewmodel.ChartSongViewModel
 import nam.tran.data.Logger
@@ -18,10 +20,15 @@ import tran.nam.core.view.mvvm.BaseFragmentVM
 import java.io.File
 import javax.inject.Inject
 
+
+
 class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongViewModel>() {
 
     @Inject
     lateinit var appExecutors: AppExecutors
+
+    @Inject
+    lateinit var mNotificationController: NotificationController
 
     private val dataBindingComponent = FragmentDataBindingComponent(this)
 
@@ -60,8 +67,11 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
                     PLAY -> {
                         mViewModel?.playSong(item.song.name,item.song.id,folder.absolutePath)
                     }
-                    PAUSE -> {
-
+                    PLAYING -> {
+                        mViewModel?.pauseSong()
+                    }
+                    PAUSE_SONG -> {
+                        mViewModel?.playSong(item.song.name,item.song.id,folder.absolutePath)
                     }
                     else -> {}
                 }
@@ -80,6 +90,10 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
                     NONE -> {}
                     else -> {}
                 }
+            }
+        }, { item, position ->
+            run {
+                mViewModel?.stopSong(item.song.id)
             }
         })
         mViewDataBinding?.rvSongWeek?.adapter = adapterSongWeek
@@ -123,14 +137,29 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
 
         mViewModel?.resultListDownload?.observe(viewLifecycleOwner, Observer {
             it?.run {
-                forEach {
-                    if (it.songStatus == CANCEL_DOWNLOAD) {
-                        mViewModel?.removeTaskDownload(it)
-                    }
-                    val index = adapterSongWeek.getPosition(it.id)
+                val index = adapterSongWeek.getPosition(id)
+                if (index != -1) {
+                    adapterSongWeek.updateItemDownload(index, progress, songStatus, downloadStatus)
+                }
+            }
+        })
+
+        mViewModel?.resultSongPlay?.observe(viewLifecycleOwner, Observer {
+            it?.run {
+                if (songStatus == PLAY)
+                    mNotificationController.clearNotification(id)
+                else
+                    mNotificationController.updatePlayerSong(id,name,progress,total)
+                if (idOld != null) {
+                    mNotificationController.clearNotification(idOld!!)
+                    val index = adapterSongWeek.getPosition(idOld!!)
                     if (index != -1) {
-                        adapterSongWeek.updateItem(index, it.progress, it.songStatus, it.downloadStatus)
+                        adapterSongWeek.updateItemPlay(index, PLAY)
                     }
+                }
+                val index = adapterSongWeek.getPosition(id)
+                if (index != -1) {
+                    adapterSongWeek.updateItemPlay(index, songStatus)
                 }
             }
         })

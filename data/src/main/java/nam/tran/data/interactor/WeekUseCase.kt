@@ -43,8 +43,8 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
     override val listSongWeek: LiveData<Resource<List<WeekSong>>>
         get() = _listSongWeek
 
-    private val _listSongDownload = MutableLiveData<Vector<DownloadData>>()
-    override val listSongDownload: LiveData<Vector<DownloadData>>
+    private val _listSongDownload = MutableLiveData<DownloadData>()
+    override val listSongDownload: LiveData<DownloadData>
         get() = _listSongDownload
 
     override fun getData(position: Int?, pathFolder: String?) {
@@ -146,24 +146,14 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
     }
 
     override fun removeTaskDownload(item: DownloadData?) {
-        Logger.debug(item)
+        Logger.debug("removeTaskDownload : $item")
         if (currentDownloadMap.containsValue(item))
             currentDownloadMap.remove(item?.id)
-        listSongDownload.value?.run {
-            if(this.contains(item)){
-                this.remove(item)
-                _listSongDownload.postValue(this)
-            }
-        }
     }
 
     override fun downloadMusic(id: Int, url: String, resume: Boolean) {
         var fileDownLoad = DownloadData(id)
-        var listDownLoad = listSongDownload.value
-        if (listDownLoad == null)
-            listDownLoad = Vector()
         if (!currentDownloadMap.contains(id)){
-            listDownLoad.add(fileDownLoad)
             currentDownloadMap[id] = fileDownLoad
         }else{
             fileDownLoad = currentDownloadMap.getValue(id)
@@ -178,6 +168,7 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
             if (file.exists()){
                 fileLenght = file.length()
             }
+            Logger.debug("downloadMusic : fileLenght - $fileLenght")
             var isCancel: Boolean = false
             var isPause: Boolean = false
             try {
@@ -190,7 +181,7 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
                 // this will be useful to display download percentage
                 // might be -1: server did not report the length
                 var totalfileLength = connection.contentLength
-                Logger.debug(totalfileLength)
+                Logger.debug("downloadMusic : totalfileLength - $totalfileLength")
                 if (fileLenght > 0)
                     totalfileLength += fileLenght.toInt()
 
@@ -216,7 +207,7 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
                     total += length
                     if (totalfileLength > 0) {
                         fileDownLoad.progress = ((fileLenght + total) * 100 / totalfileLength).toInt()
-                        _listSongDownload.postValue(listDownLoad)
+                        _listSongDownload.postValue(fileDownLoad)
                     }
                     output.write(buffer, 0, length)
                 }
@@ -227,21 +218,17 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
                 Logger.debug(isCancel)
                 Logger.debug(isPause)
                 if (isCancel) {
-                    cancelComplete(fileDownLoad, listDownLoad,pathFile)
+                    cancelComplete(fileDownLoad,pathFile)
                 } else if (isPause) {
-                    pauseComplete()
+
                 } else {
-                    downloadComplete(fileDownLoad, listDownLoad)
+                    downloadComplete(fileDownLoad)
                 }
             } catch (e: IOException) {
                 Logger.debug(e)
-                downloadError(fileDownLoad, listDownLoad, e)
+                downloadError(fileDownLoad, e)
             }
         }
-    }
-
-    private fun pauseComplete() {
-
     }
 
     override fun updateStatusDownload(id: Int, status: Int,isDownload : Boolean) {
@@ -256,7 +243,7 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
                         val listdata = listSongDownload.value
                         listdata?.run {
                             val pathFile = folderPath.plus("/").plus(id).plus(".mp3")
-                            cancelComplete(fileDownLoad, this, pathFile)
+                            cancelComplete(fileDownLoad, pathFile)
                         }
                     }
                 }
@@ -266,39 +253,42 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
 
     private fun downloadError(
         fileDownLoad: DownloadData,
-        listDownLoad: Vector<DownloadData>,
         error: IOException
     ) {
-        fileDownLoad.songStatus = ERROR
-        fileDownLoad.downloadStatus = PAUSE
-        fileDownLoad.errorResource = ErrorResource(error.message)
-        Logger.debug(listDownLoad)
-        _listSongDownload.postValue(listDownLoad)
+        appExecutors.mainThread().execute {
+            fileDownLoad.songStatus = ERROR
+            fileDownLoad.downloadStatus = PAUSE
+            fileDownLoad.errorResource = ErrorResource(error.message)
+            _listSongDownload.value = fileDownLoad
+        }
     }
 
     private fun downloadComplete(
-        fileDownLoad: DownloadData,
-        listDownLoad: Vector<DownloadData>
+        fileDownLoad: DownloadData
     ) {
-        fileDownLoad.songStatus = PLAY
-        fileDownLoad.downloadStatus = NONE
-        Logger.debug(listDownLoad)
-        _listSongDownload.postValue(listDownLoad)
+        appExecutors.mainThread().execute {
+            fileDownLoad.songStatus = PLAY
+            fileDownLoad.downloadStatus = NONE
+            _listSongDownload.value = fileDownLoad
+        }
     }
 
     private fun cancelComplete(
         fileDownLoad: DownloadData,
-        listDownLoad: Vector<DownloadData>,
         pathFile: String
     ) {
         val file = File(pathFile)
         if (file.exists()) {
             val result = file.delete()
-            Logger.debug(result)
+            Logger.debug("cancelComplete : delete - $result")
         }
-        fileDownLoad.songStatus = NONE_STATUS
-        fileDownLoad.downloadStatus = NONE
-        fileDownLoad.progress = 0
-        _listSongDownload.postValue(listDownLoad)
+        appExecutors.mainThread().execute {
+            fileDownLoad.songStatus = NONE_STATUS
+            fileDownLoad.downloadStatus = NONE
+            fileDownLoad.progress = 0
+            Logger.debug("cancelComplete : fileDownLoad - $fileDownLoad")
+            removeTaskDownload(fileDownLoad)
+            _listSongDownload.value = fileDownLoad
+        }
     }
 }

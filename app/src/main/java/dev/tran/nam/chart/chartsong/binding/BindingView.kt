@@ -37,13 +37,13 @@ object BindingView{
             NONE_STATUS, CANCEL_DOWNLOAD -> {
                 ContextCompat.getDrawable(image.context,R.drawable.icon_download)
             }
-            DOWNLOADING ,ERROR-> {
+            DOWNLOADING ,ERROR, CLOSE-> {
                 ContextCompat.getDrawable(image.context,R.drawable.icon_close)
             }
-            PLAY -> {
+            PLAY,PAUSE_SONG -> {
                 ContextCompat.getDrawable(image.context,R.drawable.icon_play)
             }
-            PAUSE -> {
+            PLAYING -> {
                 ContextCompat.getDrawable(image.context,R.drawable.icon_pause)
             }
             else -> {

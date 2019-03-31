@@ -5,6 +5,7 @@ import androidx.lifecycle.LiveData
 import nam.tran.data.interactor.IPlaySongUseCase
 import nam.tran.data.interactor.IWeekUseCase
 import nam.tran.data.model.DownloadData
+import nam.tran.data.model.SongPlayerData
 import nam.tran.data.model.WeekChart
 import nam.tran.data.model.WeekSong
 import nam.tran.data.model.core.state.Resource
@@ -20,7 +21,8 @@ class ChartSongViewModel @Inject internal constructor(
 
     var results: LiveData<Resource<List<WeekChart>>> = iWeekUseCase.listWeekChart
     var resultChild: LiveData<Resource<List<WeekSong>>> = iWeekUseCase.listSongWeek
-    var resultListDownload: LiveData<Vector<DownloadData>> = iWeekUseCase.listSongDownload
+    var resultListDownload: LiveData<DownloadData> = iWeekUseCase.listSongDownload
+    var resultSongPlay : LiveData<SongPlayerData> = iPlaySongUseCase.songplayer
 
 
     fun resource(): Resource<*>? {
@@ -53,5 +55,13 @@ class ChartSongViewModel @Inject internal constructor(
 
     fun playSong(name: String, id: Int, path: String?) {
         iPlaySongUseCase.playSong(name,id,path)
+    }
+
+    fun stopSong(id: Int) {
+        iPlaySongUseCase.stopSong(id)
+    }
+
+    fun pauseSong() {
+        iPlaySongUseCase.pauseSong()
     }
 }

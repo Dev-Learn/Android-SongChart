@@ -47,8 +47,8 @@ class NotificationController @Inject constructor(mApp: Application) {
     }
 
     fun updatePlayerSong(id : Int,name : String,progress : Int,total : Int){
-        Logger.debug(progress)
-        Logger.debug(total)
+//        Logger.debug(progress)
+//        Logger.debug(total)
         mBuilder.setContentText(name)
         mBuilder.setProgress(total,progress,false)
         mBuilder.setSmallIcon(R.drawable.icon_music_player)

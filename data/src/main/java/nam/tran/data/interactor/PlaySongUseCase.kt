@@ -4,8 +4,10 @@ import android.media.MediaPlayer
 import android.os.Handler
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import nam.tran.data.Logger
 import nam.tran.data.model.SongPlayerData
 import nam.tran.data.model.SongStatus.*
+import java.lang.IllegalStateException
 import javax.inject.Inject
 
 
@@ -40,14 +42,18 @@ class PlaySongUseCase @Inject constructor() : IPlaySongUseCase {
     }
 
     override fun playSong(name: String, id: Int, pathFolder: String?) {
-        if (!mPlayer.isPlaying && isPause && id == songPlayerData?.id){
-            if (currentPosition != 0){
-                songPlayerData?.songStatus = PLAYING
-                mPlayer.seekTo(currentPosition)
-                mHandler.postDelayed(mUpdateTimeTask, 100)
-                mPlayer.start()
+        try {
+            if (!mPlayer.isPlaying && isPause && id == songPlayerData?.id){
+                if (currentPosition != 0){
+                    songPlayerData?.songStatus = PLAYING
+                    mPlayer.seekTo(currentPosition)
+                    mHandler.postDelayed(mUpdateTimeTask, 100)
+                    mPlayer.start()
+                }
+                return
             }
-            return
+        }catch (e : IllegalStateException){
+            Logger.debug(e)
         }
 
         returnDefaultSongPlayer(id,name)
@@ -57,8 +63,7 @@ class PlaySongUseCase @Inject constructor() : IPlaySongUseCase {
         mPlayer.reset()
         mPlayer.setDataSource(folderPath.plus("/").plus(id).plus(".mp3"))
         mPlayer.setOnCompletionListener {
-            mHandler.removeCallbacks(mUpdateTimeTask)
-            mPlayer.release()
+            stopSong(songPlayerData!!.id)
         }
         mPlayer.prepare()
         mPlayer.setOnPreparedListener {
@@ -79,7 +84,7 @@ class PlaySongUseCase @Inject constructor() : IPlaySongUseCase {
     }
 
     override fun stopSong(id: Int) {
-        mPlayer.stop()
+        mPlayer.release()
         mHandler.removeCallbacks(mUpdateTimeTask)
         songPlayerData?.idOld = null
         songPlayerData?.songStatus = PLAY

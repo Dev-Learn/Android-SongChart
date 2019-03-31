@@ -127,7 +127,7 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
                     adapterSongWeek.submitList(it.data)
                     mViewDataBinding?.rvSongWeek?.postDelayed({
                         mViewDataBinding?.rvSongWeek?.visibility = View.VISIBLE
-                    }, 200)
+                    }, 300)
                 } else {
                     mViewDataBinding?.rvSongWeek?.visibility = View.INVISIBLE
                 }
@@ -140,6 +140,10 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
                 val index = adapterSongWeek.getPosition(id)
                 if (index != -1) {
                     adapterSongWeek.updateItemDownload(index, progress, songStatus, downloadStatus)
+                }else{
+                    if (songStatus == PLAY){
+                        mViewModel?.listDownloadComplete?.add(id)
+                    }
                 }
             }
         })

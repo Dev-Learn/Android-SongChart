@@ -44,11 +44,11 @@ dependencies {
     androidTestImplementation "androidx.test.espresso:espresso-core:$rootProject.espresso"
 
     api "androidx.core:core-ktx:$rootProject.core_ktx"
+    api "androidx.appcompat:appcompat:$rootProject.appcompat"
     api "com.google.android.material:material:$rootProject.material"
     api "androidx.vectordrawable:vectordrawable:$rootProject.vectordrawable"
 
     api "androidx.constraintlayout:constraintlayout:$rootProject.constraint_layout"
-    api "androidx.appcompat:appcompat:$rootProject.appcompat"
     api "androidx.recyclerview:recyclerview:$rootProject.recyclerview"
     api "android.arch.navigation:navigation-fragment-ktx:$rootProject.navigation"
     api "android.arch.navigation:navigation-ui-ktx:$rootProject.navigation"

@@ -10,7 +10,6 @@ import nam.tran.data.model.WeekChart
 import nam.tran.data.model.WeekSong
 import nam.tran.data.model.core.state.Resource
 import tran.nam.core.viewmodel.BaseFragmentViewModel
-import java.util.*
 import javax.inject.Inject
 
 class ChartSongViewModel @Inject internal constructor(
@@ -23,7 +22,7 @@ class ChartSongViewModel @Inject internal constructor(
     var resultChild: LiveData<Resource<List<WeekSong>>> = iWeekUseCase.listSongWeek
     var resultListDownload: LiveData<DownloadData> = iWeekUseCase.listSongDownload
     var resultSongPlay : LiveData<SongPlayerData> = iPlaySongUseCase.songplayer
-
+    var listDownloadComplete = mutableListOf<Int>()
 
     fun resource(): Resource<*>? {
         return results.value
@@ -38,7 +37,7 @@ class ChartSongViewModel @Inject internal constructor(
     }
 
     fun getDataExist(position: Int) {
-        iWeekUseCase.getDataExist(position)
+        iWeekUseCase.getDataExist(position,listDownloadComplete)
     }
 
     fun downloadSong(weekSong: WeekSong,isResume : Boolean = false){

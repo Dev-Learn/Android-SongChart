@@ -22,7 +22,6 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
-import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
@@ -136,12 +135,22 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
         })
     }
 
-    override fun getDataExist(position: Int) {
+    override fun getDataExist(position: Int, listDownloadComplete: MutableList<Int>) {
         isCancle = true
-        val data = _listWeekChart.value
-        data?.data?.run {
-            val listSongWeek = this[position].listWeekSong
-            _listSongWeek.value = Resource.success(listSongWeek)
+        _listSongWeek.value = Resource.loading()
+        appExecutors.diskIO().execute {
+            val data = _listWeekChart.value
+            data?.data?.run {
+                val listSongWeek = this[position].listWeekSong
+                for (item in listSongWeek){
+                    if (listDownloadComplete.contains(item.song.id)){
+                        item.songStatus = PLAY
+                        item.downloadStatus = NONE
+                        listDownloadComplete.remove(item.song.id)
+                    }
+                }
+                _listSongWeek.postValue(Resource.success(listSongWeek))
+            }
         }
     }
 

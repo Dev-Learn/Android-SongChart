@@ -66,6 +66,8 @@ dependencies {
     androidTestImplementation "org.mockito:mockito-core:$rootProject.mockito_core"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
+    implementation 'com.github.tbruyelle:rxpermissions:0.10.2'
+
 }
 
 

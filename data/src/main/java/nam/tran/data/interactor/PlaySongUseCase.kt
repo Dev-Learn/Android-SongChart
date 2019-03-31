@@ -51,6 +51,8 @@ class PlaySongUseCase @Inject constructor() : IPlaySongUseCase {
                     mPlayer.start()
                 }
                 return
+            }else{
+                mPlayer.reset()
             }
         }catch (e : IllegalStateException){
             Logger.debug(e)
@@ -60,16 +62,16 @@ class PlaySongUseCase @Inject constructor() : IPlaySongUseCase {
         pathFolder?.run {
             folderPath = this
         }
-        mPlayer.reset()
+
         mPlayer.setDataSource(folderPath.plus("/").plus(id).plus(".mp3"))
         mPlayer.setOnCompletionListener {
             stopSong(songPlayerData!!.id)
         }
-        mPlayer.prepare()
         mPlayer.setOnPreparedListener {
             mHandler.postDelayed(mUpdateTimeTask, 100)
             it.start()
         }
+        mPlayer.prepareAsync();
     }
 
     override fun pauseSong() {
@@ -84,7 +86,9 @@ class PlaySongUseCase @Inject constructor() : IPlaySongUseCase {
     }
 
     override fun stopSong(id: Int) {
-        mPlayer.release()
+        isPause = false
+        currentPosition = 0
+        mPlayer.reset()
         mHandler.removeCallbacks(mUpdateTimeTask)
         songPlayerData?.idOld = null
         songPlayerData?.songStatus = PLAY
@@ -98,8 +102,10 @@ class PlaySongUseCase @Inject constructor() : IPlaySongUseCase {
         if (songPlayerData == null)
             songPlayerData = SongPlayerData(id)
         else{
-            songPlayerData!!.idOld = songPlayerData!!.id
-            songPlayerData!!.id = id
+            if (songPlayerData!!.id != id){
+                songPlayerData!!.idOld = songPlayerData!!.id
+                songPlayerData!!.id
+            }
         }
         songPlayerData!!.name = name
         songPlayerData!!.songStatus = PLAYING

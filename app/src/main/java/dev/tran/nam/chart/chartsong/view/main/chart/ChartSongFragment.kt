@@ -1,12 +1,17 @@
 package dev.tran.nam.chart.chartsong.view.main.chart
 
+import android.Manifest
+import android.app.AlertDialog
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
+import android.provider.Settings
 import android.view.View
-import android.widget.Toast
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
+import com.tbruyelle.rxpermissions2.RxPermissions
 import dev.tran.nam.chart.chartsong.R
 import dev.tran.nam.chart.chartsong.controller.NotificationController
 import dev.tran.nam.chart.chartsong.databinding.FragmentChartWeekBinding
@@ -19,7 +24,6 @@ import tran.nam.core.biding.FragmentDataBindingComponent
 import tran.nam.core.view.mvvm.BaseFragmentVM
 import java.io.File
 import javax.inject.Inject
-
 
 
 class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongViewModel>() {
@@ -48,7 +52,7 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
         val path = Environment.getExternalStorageDirectory().absolutePath + File.separator + "ChartSong"
         Logger.debug(path)
         val folder = File(path)
-        if (!folder.exists()){
+        if (!folder.exists()) {
             val success = folder.mkdirs()
             print(success)
         }
@@ -57,23 +61,46 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
             run {
                 when (item.songStatus) {
                     NONE_STATUS -> {
-                        item.songStatus = DOWNLOADING
-                        item.downloadStatus = RUNNING
-                        mViewModel?.downloadSong(item)
+                        RxPermissions(this@ChartSongFragment)
+                            .request(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                            .subscribe {
+                                if (it) {
+                                    item.songStatus = DOWNLOADING
+                                    item.downloadStatus = RUNNING
+                                    mViewModel?.downloadSong(item)
+                                } else {
+                                    Logger.debug("All permissions were NOT granted.")
+                                    val alertDialogBuilder = AlertDialog.Builder(activity)
+                                    alertDialogBuilder.setMessage("You must allow permission to download")
+                                        .setCancelable(false)
+                                        .setPositiveButton("Ok") { dialog, _ ->
+                                            dialog.dismiss()
+                                            val intent = Intent()
+                                            intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                                            val uri = Uri.fromParts("package", requireActivity().packageName, null)
+                                            intent.data = uri
+                                            startActivity(intent)
+                                        }.setNegativeButton("Cancel") { dialog, _ ->
+                                            dialog.dismiss()
+                                        }
+                                    alertDialogBuilder.show()
+                                }
+                            }
                     }
                     DOWNLOADING, ERROR -> {
                         mViewModel?.updateStatus(item.song.id, CANCEL_DOWNLOAD)
                     }
                     PLAY -> {
-                        mViewModel?.playSong(item.song.name,item.song.id,folder.absolutePath)
+                        mViewModel?.playSong(item.song.name, item.song.id, folder.absolutePath)
                     }
                     PLAYING -> {
                         mViewModel?.pauseSong()
                     }
                     PAUSE_SONG -> {
-                        mViewModel?.playSong(item.song.name,item.song.id,folder.absolutePath)
+                        mViewModel?.playSong(item.song.name, item.song.id, folder.absolutePath)
                     }
-                    else -> {}
+                    else -> {
+                    }
                 }
             }
         }, { item, position ->
@@ -81,14 +108,16 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
                 when (item.downloadStatus) {
                     RUNNING -> {
                         item.downloadStatus = PAUSE
-                        mViewModel?.updateStatus(item.song.id,PAUSE,true)
+                        mViewModel?.updateStatus(item.song.id, PAUSE, true)
                     }
                     PAUSE -> {
                         item.downloadStatus = RUNNING
                         mViewModel?.downloadSong(item, true)
                     }
-                    NONE -> {}
-                    else -> {}
+                    NONE -> {
+                    }
+                    else -> {
+                    }
                 }
             }
         }, { item, position ->
@@ -140,8 +169,8 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
                 val index = adapterSongWeek.getPosition(id)
                 if (index != -1) {
                     adapterSongWeek.updateItemDownload(index, progress, songStatus, downloadStatus)
-                }else{
-                    if (songStatus == PLAY){
+                } else {
+                    if (songStatus == PLAY) {
                         mViewModel?.listDownloadComplete?.add(id)
                     }
                 }
@@ -153,7 +182,7 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
                 if (songStatus == PLAY)
                     mNotificationController.clearNotification(id)
                 else
-                    mNotificationController.updatePlayerSong(id,name,progress,total)
+                    mNotificationController.updatePlayerSong(id, name, progress, total)
                 if (idOld != null) {
                     mNotificationController.clearNotification(idOld!!)
                     val index = adapterSongWeek.getPosition(idOld!!)
@@ -168,7 +197,7 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
             }
         })
 
-        if (savedInstanceState == null){
+        if (savedInstanceState == null) {
             mViewModel?.getData(pathFolder = folder.absolutePath)
         }
     }

@@ -1,30 +1,38 @@
-package nam.tran.data.interactor
+package nam.tran.data.controller
 
 import android.media.MediaPlayer
 import android.os.Handler
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import nam.tran.data.Logger
-import nam.tran.data.model.SongPlayerData
+import nam.tran.data.model.PlayerData
 import nam.tran.data.model.SongStatus.*
 import java.lang.IllegalStateException
 import javax.inject.Inject
 
-
-class PlaySongUseCase @Inject constructor() : IPlaySongUseCase {
+class PlayerController @Inject constructor() : IPlayerController {
 
     private val mPlayer: MediaPlayer = MediaPlayer()
     private lateinit var folderPath: String
 
-    private val _songplayer = MutableLiveData<SongPlayerData>()
-    override val songplayer: LiveData<SongPlayerData>
-        get() = _songplayer
-
     private val mHandler = Handler()
+    private val _listPlayerNotUpdateUi = mutableListOf<Int>()
 
-    private var songPlayerData : SongPlayerData? = null
+    private var mPlayerData : PlayerData? = null
     private var isPause = false
     private var currentPosition : Int = 0
+
+    private val _player = MutableLiveData<PlayerData>()
+    override val player: LiveData<PlayerData>
+        get() = _player
+
+    override fun checkPlayerNotUpdateUI(id : Int): Boolean {
+        if (_listPlayerNotUpdateUi.contains(id)){
+            _listPlayerNotUpdateUi.remove(id)
+            return true
+        }
+        return false
+    }
 
     /**
      * Background Runnable thread
@@ -32,9 +40,9 @@ class PlaySongUseCase @Inject constructor() : IPlaySongUseCase {
     private val mUpdateTimeTask = object : Runnable {
         override fun run() {
             if (mPlayer.isPlaying){
-                songPlayerData?.progress = mPlayer.currentPosition
-                songPlayerData?.total = mPlayer.duration
-                _songplayer.postValue(songPlayerData)
+                mPlayerData?.progress = mPlayer.currentPosition
+                mPlayerData?.total = mPlayer.duration
+                _player.postValue(mPlayerData)
                 // Running this thread after 100 milliseconds
                 mHandler.postDelayed(this, 100)
             }
@@ -43,9 +51,9 @@ class PlaySongUseCase @Inject constructor() : IPlaySongUseCase {
 
     override fun playSong(name: String, id: Int, pathFolder: String?) {
         try {
-            if (!mPlayer.isPlaying && isPause && id == songPlayerData?.id){
+            if (!mPlayer.isPlaying && isPause && id == mPlayerData?.id){
                 if (currentPosition != 0){
-                    songPlayerData?.songStatus = PLAYING
+                    mPlayerData?.songStatus = PLAYING
                     mPlayer.seekTo(currentPosition)
                     mHandler.postDelayed(mUpdateTimeTask, 100)
                     mPlayer.start()
@@ -65,7 +73,7 @@ class PlaySongUseCase @Inject constructor() : IPlaySongUseCase {
 
         mPlayer.setDataSource(folderPath.plus("/").plus(id).plus(".mp3"))
         mPlayer.setOnCompletionListener {
-            stopSong(songPlayerData!!.id)
+            stopSong(mPlayerData!!.id)
         }
         mPlayer.setOnPreparedListener {
             mHandler.postDelayed(mUpdateTimeTask, 100)
@@ -80,8 +88,8 @@ class PlaySongUseCase @Inject constructor() : IPlaySongUseCase {
             currentPosition = mPlayer.currentPosition
             mPlayer.pause()
             mHandler.removeCallbacks(mUpdateTimeTask)
-            songPlayerData?.songStatus = PAUSE_SONG
-            _songplayer.value = songPlayerData
+            mPlayerData?.songStatus = PAUSE_SONG
+            _player.value = mPlayerData
         }
     }
 
@@ -90,26 +98,30 @@ class PlaySongUseCase @Inject constructor() : IPlaySongUseCase {
         currentPosition = 0
         mPlayer.reset()
         mHandler.removeCallbacks(mUpdateTimeTask)
-        songPlayerData?.idOld = null
-        songPlayerData?.songStatus = PLAY
-        _songplayer.value = songPlayerData
+        mPlayerData?.idOld = null
+        mPlayerData?.songStatus = PLAY
+        _player.value = mPlayerData
     }
 
     private fun returnDefaultSongPlayer(id: Int, name: String) {
         isPause = false
         currentPosition = 0
         mHandler.removeCallbacks(mUpdateTimeTask)
-        if (songPlayerData == null)
-            songPlayerData = SongPlayerData(id)
+        if (mPlayerData == null)
+            mPlayerData = PlayerData(id)
         else{
-            if (songPlayerData!!.id != id){
-                songPlayerData!!.idOld = songPlayerData!!.id
-                songPlayerData!!.id
+            if (mPlayerData!!.id != id){
+                mPlayerData!!.idOld = mPlayerData!!.id
+                mPlayerData!!.id = id
             }
         }
-        songPlayerData!!.name = name
-        songPlayerData!!.songStatus = PLAYING
-        songPlayerData!!.progress = 0
+        mPlayerData!!.name = name
+        mPlayerData!!.songStatus = PLAYING
+        mPlayerData!!.progress = 0
+    }
+
+    override fun updateListPlayerUI(playerData: PlayerData) {
+        _listPlayerNotUpdateUi.add(playerData.idOld!!)
     }
 
 }

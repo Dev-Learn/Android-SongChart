@@ -6,6 +6,7 @@ import dagger.Binds
 import dagger.Module
 import dagger.multibindings.IntoMap
 import dev.tran.nam.chart.chartsong.view.main.chart.viewmodel.ChartSongViewModel
+import dev.tran.nam.chart.chartsong.view.main.singer.viewmodel.SingerViewModel
 import tran.nam.core.di.ViewModelFactory
 import tran.nam.core.di.inject.ViewModelKey
 
@@ -19,4 +20,9 @@ abstract class ViewModelModule {
     @IntoMap
     @ViewModelKey(ChartSongViewModel::class)
     internal abstract fun bindChartSongViewModel(model: ChartSongViewModel): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(SingerViewModel::class)
+    internal abstract fun bindSingerViewModel(model: SingerViewModel): ViewModel
 }

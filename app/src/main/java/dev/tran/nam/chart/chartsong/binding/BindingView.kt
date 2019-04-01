@@ -13,7 +13,7 @@ import nam.tran.data.model.DownloadStatus.*
 import nam.tran.data.model.SongStatus
 import nam.tran.data.model.SongStatus.*
 
-object BindingView{
+object BindingView {
     @JvmStatic
     @BindingAdapter("loadImageSong")
     fun loadImageNetwork(image: AppCompatImageView, urlImage: String?) {
@@ -32,22 +32,22 @@ object BindingView{
 
     @JvmStatic
     @BindingAdapter("songStatus")
-    fun updateSongStatus(image : AppCompatImageView,@SongStatus status : Int){
-        val drawable = when(status){
+    fun updateSongStatus(image: AppCompatImageView, @SongStatus status: Int) {
+        val drawable = when (status) {
             NONE_STATUS, CANCEL_DOWNLOAD -> {
-                ContextCompat.getDrawable(image.context,R.drawable.icon_download)
+                ContextCompat.getDrawable(image.context, R.drawable.icon_download)
             }
-            DOWNLOADING ,ERROR, CLOSE-> {
-                ContextCompat.getDrawable(image.context,R.drawable.icon_close)
+            DOWNLOADING, ERROR, CLOSE, CANCELING_DOWNLOAD -> {
+                ContextCompat.getDrawable(image.context, R.drawable.icon_close)
             }
-            PLAY,PAUSE_SONG -> {
-                ContextCompat.getDrawable(image.context,R.drawable.icon_play)
+            PLAY, PAUSE_SONG -> {
+                ContextCompat.getDrawable(image.context, R.drawable.icon_play)
             }
             PLAYING -> {
-                ContextCompat.getDrawable(image.context,R.drawable.icon_pause)
+                ContextCompat.getDrawable(image.context, R.drawable.icon_pause)
             }
             else -> {
-                ContextCompat.getDrawable(image.context,R.drawable.icon_download)
+                ContextCompat.getDrawable(image.context, R.drawable.icon_download)
             }
         }
         image.setImageDrawable(drawable)
@@ -55,16 +55,16 @@ object BindingView{
 
     @JvmStatic
     @BindingAdapter("downloadStatus")
-    fun updateDownloadStatus(image : AppCompatImageView,@DownloadStatus status : Int){
-        val drawable = when(status){
+    fun updateDownloadStatus(image: AppCompatImageView, @DownloadStatus status: Int) {
+        val drawable = when (status) {
             RUNNING -> {
-                ContextCompat.getDrawable(image.context,R.drawable.icon_pause)
+                ContextCompat.getDrawable(image.context, R.drawable.icon_pause)
             }
-            PAUSE,NONE -> {
-                ContextCompat.getDrawable(image.context,R.drawable.icon_play)
+            PAUSE, NONE -> {
+                ContextCompat.getDrawable(image.context, R.drawable.icon_play)
             }
             else -> {
-                ContextCompat.getDrawable(image.context,R.drawable.icon_play)
+                ContextCompat.getDrawable(image.context, R.drawable.icon_play)
             }
         }
         image.setImageDrawable(drawable)

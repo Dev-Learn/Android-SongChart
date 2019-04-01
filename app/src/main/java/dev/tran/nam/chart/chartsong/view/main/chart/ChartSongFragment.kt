@@ -13,13 +13,12 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import com.tbruyelle.rxpermissions2.RxPermissions
 import dev.tran.nam.chart.chartsong.R
-import dev.tran.nam.chart.chartsong.controller.NotificationController
 import dev.tran.nam.chart.chartsong.databinding.FragmentChartWeekBinding
 import dev.tran.nam.chart.chartsong.view.main.chart.viewmodel.ChartSongViewModel
 import nam.tran.data.Logger
 import nam.tran.data.executor.AppExecutors
-import nam.tran.data.model.DownloadStatus.*
-import nam.tran.data.model.SongStatus.*
+import nam.tran.data.model.SongStatus.NONE_STATUS
+import nam.tran.data.model.SongStatus.PLAY
 import tran.nam.core.biding.FragmentDataBindingComponent
 import tran.nam.core.view.mvvm.BaseFragmentVM
 import java.io.File
@@ -30,9 +29,6 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
 
     @Inject
     lateinit var appExecutors: AppExecutors
-
-    @Inject
-    lateinit var mNotificationController: NotificationController
 
     private val dataBindingComponent = FragmentDataBindingComponent(this)
 
@@ -57,70 +53,41 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
             print(success)
         }
 
-        val adapterSongWeek = SongWeekAdapter(appExecutors, dataBindingComponent, { item, position ->
+        val adapterSongWeek = SongWeekAdapter(appExecutors, dataBindingComponent, { item, _ ->
             run {
-                when (item.songStatus) {
-                    NONE_STATUS -> {
-                        RxPermissions(this@ChartSongFragment)
-                            .request(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                            .subscribe {
-                                if (it) {
-                                    item.songStatus = DOWNLOADING
-                                    item.downloadStatus = RUNNING
-                                    mViewModel?.downloadSong(item)
-                                } else {
-                                    Logger.debug("All permissions were NOT granted.")
-                                    val alertDialogBuilder = AlertDialog.Builder(activity)
-                                    alertDialogBuilder.setMessage("You must allow permission to download")
-                                        .setCancelable(false)
-                                        .setPositiveButton("Ok") { dialog, _ ->
-                                            dialog.dismiss()
-                                            val intent = Intent()
-                                            intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                                            val uri = Uri.fromParts("package", requireActivity().packageName, null)
-                                            intent.data = uri
-                                            startActivity(intent)
-                                        }.setNegativeButton("Cancel") { dialog, _ ->
-                                            dialog.dismiss()
-                                        }
-                                    alertDialogBuilder.show()
-                                }
+                if (item._songStatus == NONE_STATUS) {
+                    RxPermissions(this@ChartSongFragment)
+                        .request(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        .subscribe {
+                            if (it) {
+                                mViewModel?.songClick(item, folder.absolutePath)
+                            } else {
+                                Logger.debug("All permissions were NOT granted.")
+                                val alertDialogBuilder = AlertDialog.Builder(activity)
+                                alertDialogBuilder.setMessage("You must allow permission to download")
+                                    .setCancelable(false)
+                                    .setPositiveButton("Ok") { dialog, _ ->
+                                        dialog.dismiss()
+                                        val intent = Intent()
+                                        intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                                        val uri = Uri.fromParts("package", requireActivity().packageName, null)
+                                        intent.data = uri
+                                        startActivity(intent)
+                                    }.setNegativeButton("Cancel") { dialog, _ ->
+                                        dialog.dismiss()
+                                    }
+                                alertDialogBuilder.show()
                             }
-                    }
-                    DOWNLOADING, ERROR -> {
-                        mViewModel?.updateStatus(item.song.id, CANCEL_DOWNLOAD)
-                    }
-                    PLAY -> {
-                        mViewModel?.playSong(item.song.name, item.song.id, folder.absolutePath)
-                    }
-                    PLAYING -> {
-                        mViewModel?.pauseSong()
-                    }
-                    PAUSE_SONG -> {
-                        mViewModel?.playSong(item.song.name, item.song.id, folder.absolutePath)
-                    }
-                    else -> {
-                    }
+                        }
+                } else {
+                    mViewModel?.songClick(item, folder.absolutePath)
                 }
             }
-        }, { item, position ->
+        }, { item, _ ->
             run {
-                when (item.downloadStatus) {
-                    RUNNING -> {
-                        item.downloadStatus = PAUSE
-                        mViewModel?.updateStatus(item.song.id, PAUSE, true)
-                    }
-                    PAUSE -> {
-                        item.downloadStatus = RUNNING
-                        mViewModel?.downloadSong(item, true)
-                    }
-                    NONE -> {
-                    }
-                    else -> {
-                    }
-                }
+                mViewModel?.downloadStatusClick(item)
             }
-        }, { item, position ->
+        }, { item, _ ->
             run {
                 mViewModel?.stopSong(item.song.id)
             }
@@ -171,23 +138,21 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
                     adapterSongWeek.updateItemDownload(index, progress, songStatus, downloadStatus)
                 } else {
                     if (songStatus == PLAY) {
-                        mViewModel?.listDownloadComplete?.add(id)
+                        mViewModel?.updateSongDownloadCompleteNotUi(id)
                     }
                 }
             }
         })
 
-        mViewModel?.resultSongPlay?.observe(viewLifecycleOwner, Observer {
+        mViewModel?.resultPlay?.observe(viewLifecycleOwner, Observer {
             it?.run {
-                if (songStatus == PLAY)
-                    mNotificationController.clearNotification(id)
-                else
-                    mNotificationController.updatePlayerSong(id, name, progress, total)
+                mViewModel?.updateNotification(this)
                 if (idOld != null) {
-                    mNotificationController.clearNotification(idOld!!)
                     val index = adapterSongWeek.getPosition(idOld!!)
                     if (index != -1) {
                         adapterSongWeek.updateItemPlay(index, PLAY)
+                    } else {
+                        mViewModel?.updateSongStatus(this)
                     }
                 }
                 val index = adapterSongWeek.getPosition(id)

@@ -14,7 +14,8 @@ data class WeekSong(
     val hierarchical_number: Int?
     , @SongStatus var _songStatus: Int = NONE_STATUS, @DownloadStatus var _downloadStatus: Int = NONE,
     var _progressDownload: Int,
-    var errorResource: ErrorResource? = null
+    var errorResource: ErrorResource? = null,
+    var _enableButton : Boolean = true
 ) : BaseObservable() {
 
     @SongStatus

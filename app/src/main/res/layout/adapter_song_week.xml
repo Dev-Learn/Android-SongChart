@@ -83,10 +83,21 @@
                 android:id="@+id/iv_status_song"
                 android:padding="@dimen/positive_10dp"
                 android:layout_marginEnd="@dimen/positive_5dp"
+                android:enabled="@{song.songStatus == SongStatus.CANCELING_DOWNLOAD ? false : true}"
                 app:songStatus="@{song.songStatus}"
                 app:layout_constraintTop_toBottomOf="@+id/tv_singer"
                 app:layout_constraintBottom_toBottomOf="@+id/iv_song"
-                app:layout_constraintEnd_toStartOf="@+id/iv_close_song" />
+                app:layout_constraintEnd_toStartOf="@+id/iv_close_song"/>
+
+        <ProgressBar
+                android:layout_width="@dimen/positive_30dp"
+                android:layout_height="@dimen/positive_30dp"
+                app:layout_constraintEnd_toEndOf="@+id/iv_status_song"
+                app:layout_constraintBottom_toBottomOf="@+id/iv_status_song"
+                app:layout_constraintStart_toStartOf="@+id/iv_status_song"
+                app:layout_constraintTop_toTopOf="@+id/iv_status_song"
+                tools:visibility="gone"
+                android:visibility="@{song.songStatus == SongStatus.CANCELING_DOWNLOAD ? View.VISIBLE : View.GONE}"/>
 
         <androidx.appcompat.widget.AppCompatImageView
                 android:layout_width="wrap_content"
@@ -109,7 +120,7 @@
                 android:id="@+id/iv_status_download"
                 tools:visibility="visible"
                 app:downloadStatus="@{song.downloadStatus}"
-                android:visibility="@{song.downloadStatus == DownloadStatus.NONE ? View.GONE : View.VISIBLE}"
+                android:visibility="@{song.downloadStatus == DownloadStatus.NONE || song.songStatus == SongStatus.CANCELING_DOWNLOAD ? View.GONE : View.VISIBLE}"
                 app:layout_constraintEnd_toStartOf="@+id/iv_status_song"
                 android:layout_marginEnd="@dimen/positive_5dp"
                 app:layout_constraintTop_toTopOf="@+id/iv_status_song"/>
@@ -121,7 +132,7 @@
                 android:enabled="false"
                 android:padding="@dimen/positive_10dp"
                 android:progress="@{song.progressDownload}"
-                android:visibility="@{song.songStatus == SongStatus.DOWNLOADING || song.songStatus == SongStatus.ERROR ? View.VISIBLE : View.GONE}"
+                android:visibility="@{song.songStatus == SongStatus.DOWNLOADING || song.songStatus == SongStatus.ERROR || song.songStatus == SongStatus.CANCELING_DOWNLOAD ? View.VISIBLE : View.GONE}"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/iv_song"/>
@@ -136,7 +147,7 @@
                 android:text="@{String.format(@string/error, song.errorResource.message)}"
                 app:layout_constraintTop_toBottomOf="@+id/progress_download"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent" />
+                app:layout_constraintEnd_toEndOf="parent"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

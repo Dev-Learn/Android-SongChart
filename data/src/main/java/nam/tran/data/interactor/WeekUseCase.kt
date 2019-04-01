@@ -3,11 +3,13 @@ package nam.tran.data.interactor
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
-import nam.tran.data.Logger
 import nam.tran.data.api.IApi
+import nam.tran.data.controller.IDownloadController
+import nam.tran.data.controller.IPlayerController
 import nam.tran.data.executor.AppExecutors
 import nam.tran.data.model.DownloadData
 import nam.tran.data.model.DownloadStatus.*
+import nam.tran.data.model.PlayerData
 import nam.tran.data.model.SongStatus.*
 import nam.tran.data.model.WeekChart
 import nam.tran.data.model.WeekSong
@@ -18,21 +20,17 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.URL
-import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 
-class WeekUseCase @Inject internal constructor(private val appExecutors: AppExecutors, private val iApi: IApi) :
-    IWeekUseCase {
+class WeekUseCase @Inject internal constructor(private val appExecutors: AppExecutors, private val iApi: IApi
+                                               ,private val iPlayerController: IPlayerController
+                                               ,private val  iDownloadController: IDownloadController
+) : IWeekUseCase {
 
     private var isCancle = false
     private var currentPosition = 0
     private lateinit var folderPath: String
-    private val currentDownloadMap: MutableMap<Int, DownloadData> = ConcurrentHashMap()
 
     private val _listWeekChart = MutableLiveData<Resource<List<WeekChart>>>()
     override val listWeekChart: LiveData<Resource<List<WeekChart>>>
@@ -42,9 +40,11 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
     override val listSongWeek: LiveData<Resource<List<WeekSong>>>
         get() = _listSongWeek
 
-    private val _listSongDownload = MutableLiveData<DownloadData>()
     override val listSongDownload: LiveData<DownloadData>
-        get() = _listSongDownload
+        get() = iDownloadController.listDownload
+
+    override val songPlayer: LiveData<PlayerData>
+        get() = iPlayerController.player
 
     override fun getData(position: Int?, pathFolder: String?) {
         pathFolder?.run {
@@ -135,7 +135,7 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
         })
     }
 
-    override fun getDataExist(position: Int, listDownloadComplete: MutableList<Int>) {
+    override fun getDataExist(position: Int) {
         isCancle = true
         _listSongWeek.value = Resource.loading()
         appExecutors.diskIO().execute {
@@ -143,10 +143,13 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
             data?.data?.run {
                 val listSongWeek = this[position].listWeekSong
                 for (item in listSongWeek){
-                    if (listDownloadComplete.contains(item.song.id)){
+                    if (iDownloadController.checkItemNotUpdateUI(item.song.id)){
                         item.songStatus = PLAY
                         item.downloadStatus = NONE
-                        listDownloadComplete.remove(item.song.id)
+                    }
+                    if (iPlayerController.checkPlayerNotUpdateUI(item.song.id)){
+                        item.songStatus = PLAY
+                        item.downloadStatus = NONE
                     }
                 }
                 _listSongWeek.postValue(Resource.success(listSongWeek))
@@ -154,150 +157,36 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
         }
     }
 
-    override fun removeTaskDownload(item: DownloadData?) {
-        Logger.debug("removeTaskDownload : $item")
-        if (currentDownloadMap.containsValue(item))
-            currentDownloadMap.remove(item?.id)
-    }
-
     override fun downloadMusic(id: Int, url: String, resume: Boolean) {
-        var fileDownLoad = DownloadData(id)
-        if (!currentDownloadMap.contains(id)){
-            currentDownloadMap[id] = fileDownLoad
-        }else{
-            fileDownLoad = currentDownloadMap.getValue(id)
-            fileDownLoad.songStatus = DOWNLOADING
-            fileDownLoad.downloadStatus = RUNNING
-        }
-
-        appExecutors.networkIO().execute {
-            val pathFile = folderPath.plus("/").plus(id).plus(".mp3")
-            var fileLenght: Long = 0
-            val file = File(pathFile)
-            if (file.exists()){
-                fileLenght = file.length()
-            }
-            Logger.debug("downloadMusic : fileLenght - $fileLenght")
-            var isCancel: Boolean = false
-            var isPause: Boolean = false
-            try {
-                val connection = URL(url).openConnection() as HttpURLConnection
-                if (fileLenght > 0){
-                    connection.setRequestProperty("Range", "bytes=$fileLenght -")
-                }
-                connection.connect()
-
-                // this will be useful to display download percentage
-                // might be -1: server did not report the length
-                var totalfileLength = connection.contentLength
-                Logger.debug("downloadMusic : totalfileLength - $totalfileLength")
-                if (fileLenght > 0)
-                    totalfileLength += fileLenght.toInt()
-
-                // download the file
-                val input = connection.inputStream
-                val output = FileOutputStream(pathFile,fileLenght > 0)
-
-                val buffer = ByteArray(100)
-                var total = 0
-                var length: Int
-
-                //https://stackoverflow.com/questions/6237079/resume-http-file-download-in-java
-
-                while (input.read(buffer, 0, 100).let { length = it; length > 0 }) {
-                    if (fileDownLoad.songStatus == CANCEL_DOWNLOAD) {
-                        isCancel = true
-                        break
-                    }
-                    if (fileDownLoad.downloadStatus == PAUSE) {
-                        isPause = true
-                        break
-                    }
-                    total += length
-                    if (totalfileLength > 0) {
-                        fileDownLoad.progress = ((fileLenght + total) * 100 / totalfileLength).toInt()
-                        _listSongDownload.postValue(fileDownLoad)
-                    }
-                    output.write(buffer, 0, length)
-                }
-
-                output.close()
-                input.close()
-
-                Logger.debug(isCancel)
-                Logger.debug(isPause)
-                if (isCancel) {
-                    cancelComplete(fileDownLoad,pathFile)
-                } else if (isPause) {
-
-                } else {
-                    downloadComplete(fileDownLoad)
-                }
-            } catch (e: IOException) {
-                Logger.debug(e)
-                downloadError(fileDownLoad, e)
-            }
-        }
+        iDownloadController.downloadMusic(id,url,resume,folderPath)
     }
 
-    override fun updateStatusDownload(id: Int, status: Int,isDownload : Boolean) {
-        if (currentDownloadMap.containsKey(id)) {
-            val fileDownLoad = currentDownloadMap[id]
-            fileDownLoad?.apply {
-                if (isDownload)
-                    downloadStatus = status
-                else{
-                    songStatus = status
-                    if (songStatus == CANCEL_DOWNLOAD && downloadStatus == PAUSE){
-                        val listdata = listSongDownload.value
-                        listdata?.run {
-                            val pathFile = folderPath.plus("/").plus(id).plus(".mp3")
-                            cancelComplete(fileDownLoad, pathFile)
-                        }
-                    }
-                }
-            }
-        }
+    override fun removeTaskDownload(item: DownloadData?) {
+        iDownloadController.removeTaskDownload(item)
     }
 
-    private fun downloadError(
-        fileDownLoad: DownloadData,
-        error: IOException
-    ) {
-        appExecutors.mainThread().execute {
-            fileDownLoad.songStatus = ERROR
-            fileDownLoad.downloadStatus = PAUSE
-            fileDownLoad.errorResource = ErrorResource(error.message)
-            _listSongDownload.value = fileDownLoad
-        }
+    override fun updateSongDownloadCompleteNotUpdateUi(id: Int) {
+        iDownloadController.updateSongDownloadCompleteNotUpdateUi(id)
     }
 
-    private fun downloadComplete(
-        fileDownLoad: DownloadData
-    ) {
-        appExecutors.mainThread().execute {
-            fileDownLoad.songStatus = PLAY
-            fileDownLoad.downloadStatus = NONE
-            _listSongDownload.value = fileDownLoad
-        }
+    override fun updateStatusDownload(id: Int, status: Int, isDownload: Boolean) {
+        iDownloadController.updateStatusDownload(id,status,isDownload,folderPath)
     }
 
-    private fun cancelComplete(
-        fileDownLoad: DownloadData,
-        pathFile: String
-    ) {
-        val file = File(pathFile)
-        if (file.exists()) {
-            val result = file.delete()
-            Logger.debug("cancelComplete : delete - $result")
-        }
-        appExecutors.mainThread().execute {
-            fileDownLoad.songStatus = NONE_STATUS
-            fileDownLoad.downloadStatus = NONE
-            fileDownLoad.progress = 0
-            Logger.debug("cancelComplete : fileDownLoad - $fileDownLoad")
-            removeTaskDownload(fileDownLoad)
-            _listSongDownload.value = fileDownLoad
-        }
+    override fun playSong(name: String, id: Int, path: String?) {
+        iPlayerController.playSong(name,id,path)
     }
+
+    override fun pauseSong() {
+        iPlayerController.pauseSong()
+    }
+
+    override fun stopSong(id: Int) {
+        iPlayerController.stopSong(id)
+    }
+
+    override fun updateSongStatus(playerData: PlayerData) {
+        iPlayerController.updateListPlayerUI(playerData)
+    }
+
 }

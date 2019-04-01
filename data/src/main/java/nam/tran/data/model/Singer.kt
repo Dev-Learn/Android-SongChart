@@ -1,3 +1,5 @@
 package nam.tran.data.model
 
-data class Singer(val id : Int, val name : String)
+import java.io.Serializable
+
+data class Singer(val id : Int, val name : String) : Serializable

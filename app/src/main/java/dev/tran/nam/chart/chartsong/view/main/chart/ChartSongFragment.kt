@@ -11,9 +11,11 @@ import android.view.View
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
+import androidx.navigation.Navigation
 import com.tbruyelle.rxpermissions2.RxPermissions
 import dev.tran.nam.chart.chartsong.R
 import dev.tran.nam.chart.chartsong.databinding.FragmentChartWeekBinding
+import dev.tran.nam.chart.chartsong.view.main.SongAdapter
 import dev.tran.nam.chart.chartsong.view.main.chart.viewmodel.ChartSongViewModel
 import nam.tran.data.Logger
 import nam.tran.data.executor.AppExecutors
@@ -53,45 +55,53 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
             print(success)
         }
 
-        val adapterSongWeek = SongWeekAdapter(appExecutors, dataBindingComponent, { item, _ ->
-            run {
-                if (item._songStatus == NONE_STATUS) {
-                    RxPermissions(this@ChartSongFragment)
-                        .request(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                        .subscribe {
-                            if (it) {
-                                mViewModel?.songClick(item, folder.absolutePath)
-                            } else {
-                                Logger.debug("All permissions were NOT granted.")
-                                val alertDialogBuilder = AlertDialog.Builder(activity)
-                                alertDialogBuilder.setMessage("You must allow permission to download")
-                                    .setCancelable(false)
-                                    .setPositiveButton("Ok") { dialog, _ ->
-                                        dialog.dismiss()
-                                        val intent = Intent()
-                                        intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                                        val uri = Uri.fromParts("package", requireActivity().packageName, null)
-                                        intent.data = uri
-                                        startActivity(intent)
-                                    }.setNegativeButton("Cancel") { dialog, _ ->
-                                        dialog.dismiss()
-                                    }
-                                alertDialogBuilder.show()
+        val adapterSongWeek =
+            SongAdapter(appExecutors, dataBindingComponent, { item, _ ->
+                run {
+                    if (item._songStatus == NONE_STATUS) {
+                        RxPermissions(this@ChartSongFragment)
+                            .request(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                            .subscribe {
+                                if (it) {
+                                    mViewModel?.songClick(item, folder.absolutePath)
+                                } else {
+                                    Logger.debug("All permissions were NOT granted.")
+                                    val alertDialogBuilder = AlertDialog.Builder(activity)
+                                    alertDialogBuilder.setMessage("You must allow permission to download")
+                                        .setCancelable(false)
+                                        .setPositiveButton("Ok") { dialog, _ ->
+                                            dialog.dismiss()
+                                            val intent = Intent()
+                                            intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                                            val uri = Uri.fromParts("package", requireActivity().packageName, null)
+                                            intent.data = uri
+                                            startActivity(intent)
+                                        }.setNegativeButton("Cancel") { dialog, _ ->
+                                            dialog.dismiss()
+                                        }
+                                    alertDialogBuilder.show()
+                                }
                             }
-                        }
-                } else {
-                    mViewModel?.songClick(item, folder.absolutePath)
+                    } else {
+                        mViewModel?.songClick(item, folder.absolutePath)
+                    }
                 }
-            }
-        }, { item, _ ->
-            run {
-                mViewModel?.downloadStatusClick(item)
-            }
-        }, { item, _ ->
-            run {
-                mViewModel?.stopSong(item.song.id)
-            }
-        })
+            }, { item, _ ->
+                run {
+                    mViewModel?.downloadStatusClick(item)
+                }
+            }, { item, _ ->
+                run {
+                    mViewModel?.stopSong(item.id)
+                }
+            }, {
+                it?.run {
+                    val bundle = Bundle()
+                    bundle.putSerializable("singer", this)
+                    Navigation.findNavController(requireActivity(), R.id.nav_host_fragment)
+                        .navigate(R.id.action_chartSongFragment_to_singerFragment, bundle)
+                }
+            })
         mViewDataBinding?.rvSongWeek?.adapter = adapterSongWeek
 
         adapterWeekChart = WeekChartAdapter(
@@ -162,7 +172,7 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
             }
         })
 
-        if (savedInstanceState == null) {
+        if (savedInstanceState == null && mViewModel?.isInitializer == false) {
             mViewModel?.getData(pathFolder = folder.absolutePath)
         }
     }

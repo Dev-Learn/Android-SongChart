@@ -17,5 +17,15 @@
             android:id="@+id/chartSongFragment"
             android:name="dev.tran.nam.chart.chartsong.view.main.chart.ChartSongFragment"
             android:label="ChartSongFragment"
-            tools:layout="@layout/fragment_chart_week"/>
+            tools:layout="@layout/fragment_chart_week">
+        <action android:id="@+id/action_chartSongFragment_to_singerFragment" app:destination="@id/singerFragment"
+                app:enterAnim="@anim/slide_right_in" app:popExitAnim="@anim/slide_right_out"
+                app:exitAnim="@anim/slide_left_out" app:popEnterAnim="@anim/slide_left_in"/>
+    </fragment>
+
+    <fragment
+            android:id="@+id/singerFragment"
+            android:name="dev.tran.nam.chart.chartsong.view.main.singer.SingerFragment"
+            android:label="SingerFragment"
+            tools:layout="@layout/fragment_singer"/>
 </navigation>

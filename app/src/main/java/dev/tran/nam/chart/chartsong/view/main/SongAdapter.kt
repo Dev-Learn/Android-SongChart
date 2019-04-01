@@ -1,4 +1,4 @@
-package dev.tran.nam.chart.chartsong.view.main.chart
+package dev.tran.nam.chart.chartsong.view.main
 
 import android.annotation.SuppressLint
 import android.view.LayoutInflater
@@ -9,20 +9,22 @@ import androidx.recyclerview.widget.DiffUtil
 import dev.tran.nam.chart.chartsong.R
 import dev.tran.nam.chart.chartsong.databinding.AdapterSongWeekBinding
 import nam.tran.data.executor.AppExecutors
-import nam.tran.data.model.WeekSong
+import nam.tran.data.model.Singer
+import nam.tran.data.model.Song
 import tran.nam.common.DataBoundListAdapter
 import tran.nam.common.DataBoundViewHolder
 
-class SongWeekAdapter constructor(
+class SongAdapter (
     appExecutors: AppExecutors, private val dataBindingComponent: DataBindingComponent
-    , val songStatusClick: (WeekSong, Int) -> Unit, val downloadStatusClick: (WeekSong, Int) -> Unit, val stopMusicClick: (WeekSong, Int) -> Unit
-) : DataBoundListAdapter<WeekSong, AdapterSongWeekBinding>(appExecutors, object : DiffUtil.ItemCallback<WeekSong>() {
-    override fun areItemsTheSame(oldItem: WeekSong, newItem: WeekSong): Boolean {
-        return oldItem.song == newItem.song
+    , val songStatusClick: (Song, Int) -> Unit, val downloadStatusClick: (Song, Int) -> Unit
+    , val stopMusicClick: (Song, Int) -> Unit, val singerClick: ((Singer?) -> Unit)? = null
+) : DataBoundListAdapter<Song, AdapterSongWeekBinding>(appExecutors, object : DiffUtil.ItemCallback<Song>() {
+    override fun areItemsTheSame(oldItem: Song, newItem: Song): Boolean {
+        return oldItem.id == newItem.id
     }
 
-    override fun areContentsTheSame(oldItem: WeekSong, newItem: WeekSong): Boolean {
-        return oldItem.position == newItem.position && oldItem.songStatus == newItem.songStatus && oldItem.downloadStatus == newItem.downloadStatus
+    override fun areContentsTheSame(oldItem: Song, newItem: Song): Boolean {
+        return oldItem.songStatus == newItem.songStatus && oldItem.downloadStatus == newItem.downloadStatus
     }
 
 }) {
@@ -50,7 +52,7 @@ class SongWeekAdapter constructor(
                 downloadStatusClick.invoke(it, hoder.adapterPosition)
             }
         }
-        binding.progressDownload.setOnTouchListener { v, event ->
+        binding.progressDownload.setOnTouchListener { _, _ ->
             return@setOnTouchListener true
         }
         binding.ivCloseSong.setOnClickListener {
@@ -58,10 +60,15 @@ class SongWeekAdapter constructor(
                 stopMusicClick.invoke(it, hoder.adapterPosition)
             }
         }
+        binding.tvSinger.setOnClickListener {
+            binding.song?.let {
+                singerClick?.invoke(it.singer)
+            }
+        }
         return hoder
     }
 
-    override fun bind(binding: AdapterSongWeekBinding, item: WeekSong) {
+    override fun bind(binding: AdapterSongWeekBinding, item: Song) {
         binding.song = item
     }
 
@@ -78,8 +85,8 @@ class SongWeekAdapter constructor(
     }
 
     fun getPosition(idSong : Int) : Int{
-        currentList.forEachIndexed { index, weekSong ->
-            if (weekSong.song.id == idSong)
+        currentList.forEachIndexed { index, song ->
+            if (song.id == idSong)
                 return index
         }
         return -1

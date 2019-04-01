@@ -3,8 +3,7 @@
         xmlns:tools="http://schemas.android.com/tools">
 
     <data>
-        <variable name="song" type="nam.tran.data.model.WeekSong"/>
-        <import type="nam.tran.data.model.Song"/>
+        <variable name="song" type="nam.tran.data.model.Song"/>
         <import type="nam.tran.data.model.Singer"/>
         <import type="java.lang.Integer"/>
         <import type="nam.tran.data.model.DownloadStatus"/>
@@ -23,7 +22,7 @@
                 android:layout_width="@dimen/positive_100dp"
                 android:layout_height="@dimen/positive_100dp"
                 android:id="@+id/iv_song"
-                app:loadImageSong="@{song.song.image}"
+                app:loadImageSong="@{song.image}"
                 tools:src="@drawable/image_test"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintStart_toStartOf="parent"/>
@@ -39,9 +38,9 @@
                 android:padding="@dimen/positive_5dp"
                 android:textSize="@dimen/text_size_10sp"
                 android:textStyle="bold"
-                android:text="@{song.song.name}"
+                android:text="@{song.name}"
                 app:layout_constraintStart_toEndOf="@+id/iv_song"
-                app:layout_constraintEnd_toStartOf="@+id/tv_position"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toTopOf="@+id/tv_singer"
                 android:id="@+id/tv_name"/>
@@ -56,25 +55,12 @@
                 android:ellipsize="end"
                 android:padding="@dimen/positive_5dp"
                 tools:text="GiGi Nguyen"
-                android:text="@{song.song.singer.name}"
+                android:text="@{song.singer.name}"
                 app:layout_constraintTop_toBottomOf="@+id/tv_name"
                 app:layout_constraintStart_toStartOf="@+id/tv_name"
-                app:layout_constraintEnd_toStartOf="@+id/tv_position"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintBottom_toTopOf="@+id/iv_status_song"
                 android:id="@+id/tv_singer"/>
-
-        <androidx.appcompat.widget.AppCompatTextView
-                android:layout_width="@dimen/positive_40dp"
-                android:layout_height="wrap_content"
-                android:textSize="@dimen/text_size_20sp"
-                android:gravity="center"
-                android:textColor="@android:color/black"
-                android:textStyle="bold"
-                android:text="@{Integer.toString(song.position)}"
-                tools:text="1"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                android:id="@+id/tv_position"/>
 
         <androidx.appcompat.widget.AppCompatImageView
                 android:layout_width="wrap_content"

@@ -14,6 +14,33 @@
             android:layout_height="match_parent"
             tools:context="dev.tran.nam.chart.chartsong.view.main.singer.SingerFragment">
 
+        <androidx.appcompat.widget.AppCompatTextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:id="@+id/tv_singer"
+                android:gravity="center"
+                android:textColor="@android:color/black"
+                android:textStyle="bold"
+                android:textSize="@dimen/text_size_20sp"
+                android:padding="@dimen/positive_10dp"
+                tools:text="GiGi Nguyen"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:id="@+id/rv_song_week"
+                android:orientation="vertical"
+                tools:listitem="@layout/adapter_song_week"
+                app:visibleView="@{viewModel.resource()}"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tv_singer"/>
+
         <include
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

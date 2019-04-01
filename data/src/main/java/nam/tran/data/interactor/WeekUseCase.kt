@@ -7,12 +7,9 @@ import nam.tran.data.api.IApi
 import nam.tran.data.controller.IDownloadController
 import nam.tran.data.controller.IPlayerController
 import nam.tran.data.executor.AppExecutors
-import nam.tran.data.model.DownloadData
+import nam.tran.data.model.*
 import nam.tran.data.model.DownloadStatus.*
-import nam.tran.data.model.PlayerData
 import nam.tran.data.model.SongStatus.*
-import nam.tran.data.model.WeekChart
-import nam.tran.data.model.WeekSong
 import nam.tran.data.model.core.state.ErrorResource
 import nam.tran.data.model.core.state.Resource
 import org.json.JSONObject
@@ -26,25 +23,19 @@ import javax.inject.Inject
 class WeekUseCase @Inject internal constructor(private val appExecutors: AppExecutors, private val iApi: IApi
                                                ,private val iPlayerController: IPlayerController
                                                ,private val  iDownloadController: IDownloadController
-) : IWeekUseCase {
+) : DownloadAndPlayUseCase(iPlayerController,iDownloadController),IWeekUseCase {
 
     private var isCancle = false
     private var currentPosition = 0
-    private lateinit var folderPath: String
+
 
     private val _listWeekChart = MutableLiveData<Resource<List<WeekChart>>>()
     override val listWeekChart: LiveData<Resource<List<WeekChart>>>
         get() = _listWeekChart
 
-    private val _listSongWeek = MediatorLiveData<Resource<List<WeekSong>>>()
-    override val listSongWeek: LiveData<Resource<List<WeekSong>>>
+    private val _listSongWeek = MediatorLiveData<Resource<List<Song>>>()
+    override val listSongWeek: LiveData<Resource<List<Song>>>
         get() = _listSongWeek
-
-    override val listSongDownload: LiveData<DownloadData>
-        get() = iDownloadController.listDownload
-
-    override val songPlayer: LiveData<PlayerData>
-        get() = iPlayerController.player
 
     override fun getData(position: Int?, pathFolder: String?) {
         pathFolder?.run {
@@ -107,17 +98,19 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
                 if (response.isSuccessful) {
                     val listWeekSong = response.body()
                     listWeekSong?.run {
+                        val listSong = mutableListOf<Song>()
                         for (song in this) {
                             val file = File(folderPath.plus("/").plus(song.song.id).plus(".mp3"))
                             print(file)
                             if (file.exists()) {
-                                song.songStatus = PLAY
+                                song.song.songStatus = PLAY
                             }
+                            listSong.add(song.song)
                         }
-                        listDataWeekChart[position].listWeekSong = this
+                        listDataWeekChart[position].listWeekSong = listSong
                         _listWeekChart.value = Resource.success(listDataWeekChart)
                         if (!isCancle && currentPosition == position)
-                            _listSongWeek.value = Resource.success(this)
+                            _listSongWeek.value = Resource.success(listSong)
                     }
                 } else {
                     if (!isCancle)
@@ -143,11 +136,11 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
             data?.data?.run {
                 val listSongWeek = this[position].listWeekSong
                 for (item in listSongWeek){
-                    if (iDownloadController.checkItemNotUpdateUI(item.song.id)){
+                    if (iDownloadController.checkItemNotUpdateUI(item.id)){
                         item.songStatus = PLAY
                         item.downloadStatus = NONE
                     }
-                    if (iPlayerController.checkPlayerNotUpdateUI(item.song.id)){
+                    if (iPlayerController.checkPlayerNotUpdateUI(item.id)){
                         item.songStatus = PLAY
                         item.downloadStatus = NONE
                     }
@@ -155,38 +148,6 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
                 _listSongWeek.postValue(Resource.success(listSongWeek))
             }
         }
-    }
-
-    override fun downloadMusic(id: Int, url: String, resume: Boolean) {
-        iDownloadController.downloadMusic(id,url,resume,folderPath)
-    }
-
-    override fun removeTaskDownload(item: DownloadData?) {
-        iDownloadController.removeTaskDownload(item)
-    }
-
-    override fun updateSongDownloadCompleteNotUpdateUi(id: Int) {
-        iDownloadController.updateSongDownloadCompleteNotUpdateUi(id)
-    }
-
-    override fun updateStatusDownload(id: Int, status: Int, isDownload: Boolean) {
-        iDownloadController.updateStatusDownload(id,status,isDownload,folderPath)
-    }
-
-    override fun playSong(name: String, id: Int, path: String?) {
-        iPlayerController.playSong(name,id,path)
-    }
-
-    override fun pauseSong() {
-        iPlayerController.pauseSong()
-    }
-
-    override fun stopSong(id: Int) {
-        iPlayerController.stopSong(id)
-    }
-
-    override fun updateSongStatus(playerData: PlayerData) {
-        iPlayerController.updateListPlayerUI(playerData)
     }
 
 }

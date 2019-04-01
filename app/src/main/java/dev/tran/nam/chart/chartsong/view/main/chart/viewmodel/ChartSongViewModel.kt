@@ -16,9 +16,10 @@ class ChartSongViewModel @Inject internal constructor(
 ) : BaseFragmentViewModel(application) {
 
     var results: LiveData<Resource<List<WeekChart>>> = iWeekUseCase.listWeekChart
-    var resultChild: LiveData<Resource<List<WeekSong>>> = iWeekUseCase.listSongWeek
+    var resultChild: LiveData<Resource<List<Song>>> = iWeekUseCase.listSongWeek
     var resultListDownload: LiveData<DownloadData> = iWeekUseCase.listSongDownload
     var resultPlay : LiveData<PlayerData> = iWeekUseCase.songPlayer
+    var isInitializer = false
 
     fun resource(): Resource<*>? {
         return results.value
@@ -30,14 +31,15 @@ class ChartSongViewModel @Inject internal constructor(
 
     fun getData(position : Int? = null, pathFolder: String? = null) {
         iWeekUseCase.getData(position,pathFolder)
+        isInitializer = true
     }
 
     fun getDataExist(position: Int) {
         iWeekUseCase.getDataExist(position)
     }
 
-    fun downloadSong(weekSong: WeekSong,isResume : Boolean = false){
-        iWeekUseCase.downloadMusic(weekSong.song.id,weekSong.song.link_local,isResume)
+    fun downloadSong(weekSong: Song,isResume : Boolean = false){
+        iWeekUseCase.downloadMusic(weekSong.id,weekSong.link_local,isResume)
     }
 
     fun updateStatus(id: Int,status : Int,isDownload : Boolean = false){
@@ -64,7 +66,7 @@ class ChartSongViewModel @Inject internal constructor(
         iWeekUseCase.updateSongDownloadCompleteNotUpdateUi(id)
     }
 
-    fun songClick(item: WeekSong,folder: String) {
+    fun songClick(item: Song,folder: String) {
         when (item.songStatus) {
             SongStatus.NONE_STATUS -> {
                 item.songStatus = SongStatus.DOWNLOADING
@@ -75,27 +77,27 @@ class ChartSongViewModel @Inject internal constructor(
                 if (item.downloadStatus == DownloadStatus.RUNNING){
                     item.songStatus = SongStatus.CANCELING_DOWNLOAD
                 }
-                updateStatus(item.song.id, SongStatus.CANCEL_DOWNLOAD)
+                updateStatus(item.id, SongStatus.CANCEL_DOWNLOAD)
             }
             SongStatus.PLAY -> {
-                playSong(item.song.name, item.song.id, folder)
+                playSong(item.name, item.id, folder)
             }
             SongStatus.PLAYING -> {
                 pauseSong()
             }
             SongStatus.PAUSE_SONG -> {
-                playSong(item.song.name, item.song.id, folder)
+                playSong(item.name, item.id, folder)
             }
             else -> {
             }
         }
     }
 
-    fun downloadStatusClick(item: WeekSong) {
+    fun downloadStatusClick(item: Song) {
         when (item.downloadStatus) {
             DownloadStatus.RUNNING -> {
                 item.downloadStatus = DownloadStatus.PAUSE
-                updateStatus(item.song.id, DownloadStatus.PAUSE, true)
+                updateStatus(item.id, DownloadStatus.PAUSE, true)
             }
             DownloadStatus.PAUSE -> {
                 item.downloadStatus = DownloadStatus.RUNNING

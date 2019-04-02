@@ -7,7 +7,7 @@ import nam.tran.data.model.DownloadData
 import nam.tran.data.model.PlayerData
 
 open class DownloadAndPlayUseCase constructor(private val iPlayerController: IPlayerController
-                                              , private val  iDownloadController: IDownloadController) : IDownloadAndPlayUseCase{
+                                              , private val iDownloadController: IDownloadController) : IDownloadAndPlayUseCase{
     lateinit var folderPath: String
 
     override val listSongDownload: LiveData<DownloadData>
@@ -46,5 +46,13 @@ open class DownloadAndPlayUseCase constructor(private val iPlayerController: IPl
 
     override fun updateSongStatus(playerData: PlayerData) {
         iPlayerController.updateListPlayerUI(playerData)
+    }
+
+    override fun getListIdPause(): List<DownloadData> {
+        return iDownloadController.getListIdPause()
+    }
+
+    override fun pauseId(): Int {
+        return iPlayerController.pauseId()
     }
 }

@@ -6,7 +6,9 @@ import nam.tran.data.Logger
 import nam.tran.data.executor.AppExecutors
 import nam.tran.data.model.DownloadData
 import nam.tran.data.model.DownloadStatus
+import nam.tran.data.model.DownloadStatus.PAUSE
 import nam.tran.data.model.SongStatus
+import nam.tran.data.model.SongStatus.*
 import nam.tran.data.model.core.state.ErrorResource
 import java.io.File
 import java.io.FileOutputStream
@@ -183,5 +185,15 @@ class DownloadController @Inject constructor(private val appExecutors: AppExecut
             removeTaskDownload(fileDownLoad)
             _listDownload.value = fileDownLoad
         }
+    }
+
+    override fun getListIdPause(): List<DownloadData> {
+        val listId = mutableListOf<DownloadData>()
+        for ((k,v) in currentDownloadMap){
+            if ((v.songStatus == DOWNLOADING && v.downloadStatus == PAUSE) || (v.songStatus == ERROR && v.downloadStatus == PAUSE)){
+                listId.add(v)
+            }
+        }
+        return listId
     }
 }

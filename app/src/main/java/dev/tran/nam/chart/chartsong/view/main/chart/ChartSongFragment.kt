@@ -36,6 +36,8 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
 
     private lateinit var adapterWeekChart: WeekChartAdapter
 
+    private lateinit var folder : File
+
     override fun initViewModel(factory: ViewModelProvider.Factory?) {
         mViewModel = ViewModelProviders.of(this, factory).get(ChartSongViewModel::class.java)
     }
@@ -49,7 +51,7 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
 
         val path = Environment.getExternalStorageDirectory().absolutePath + File.separator + "ChartSong"
         Logger.debug(path)
-        val folder = File(path)
+        folder = File(path)
         if (!folder.exists()) {
             val success = folder.mkdirs()
             print(success)
@@ -106,9 +108,9 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
 
         adapterWeekChart = WeekChartAdapter(
             appExecutors,
-            dataBindingComponent,
-            savedInstanceState?.getInt("weekSelect", 0) ?: 0
+            dataBindingComponent
         ) { it, position ->
+            mViewModel?.mPosition = position
             if (!it.listWeekSong.isNullOrEmpty()) {
                 mViewModel?.getDataExist(position)
             } else {
@@ -171,13 +173,16 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
                 }
             }
         })
-
-        if (savedInstanceState == null && mViewModel?.isInitializer == false) {
-            mViewModel?.getData(pathFolder = folder.absolutePath)
-        }
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        outState.putInt("weekSelect", adapterWeekChart.getPositionSelect())
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
+        if (savedInstanceState == null && mViewModel?.mPosition == -1) {
+            mViewModel?.getData(pathFolder = folder.absolutePath)
+        }else{
+            savedInstanceState?.getInt("weekSelect", 0).run {
+                adapterWeekChart.position = mViewModel?.mPosition ?: 0
+            }
+        }
     }
 }

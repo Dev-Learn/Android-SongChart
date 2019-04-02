@@ -124,4 +124,8 @@ class PlayerController @Inject constructor() : IPlayerController {
         _listPlayerNotUpdateUi.add(playerData.idOld!!)
     }
 
+    override fun pauseId(): Int {
+        return if (mPlayerData?.songStatus == PAUSE_SONG) mPlayerData!!.id else -1
+    }
+
 }

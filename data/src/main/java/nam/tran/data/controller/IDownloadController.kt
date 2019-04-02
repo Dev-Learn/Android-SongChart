@@ -11,4 +11,5 @@ interface IDownloadController {
     fun updateSongDownloadCompleteNotUpdateUi(id: Int)
     fun checkItemNotUpdateUI(id: Int) : Boolean
     fun removeTaskDownload(item: DownloadData?)
+    fun getListIdPause() : List<DownloadData>
 }

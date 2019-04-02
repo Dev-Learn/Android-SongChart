@@ -7,9 +7,13 @@ import nam.tran.data.api.IApi
 import nam.tran.data.controller.IDownloadController
 import nam.tran.data.controller.IPlayerController
 import nam.tran.data.executor.AppExecutors
-import nam.tran.data.model.*
-import nam.tran.data.model.DownloadStatus.*
-import nam.tran.data.model.SongStatus.*
+import nam.tran.data.model.DownloadData
+import nam.tran.data.model.DownloadStatus.NONE
+import nam.tran.data.model.Song
+import nam.tran.data.model.SongStatus.PAUSE_SONG
+import nam.tran.data.model.SongStatus.PLAY
+import nam.tran.data.model.WeekChart
+import nam.tran.data.model.WeekSong
 import nam.tran.data.model.core.state.ErrorResource
 import nam.tran.data.model.core.state.Resource
 import org.json.JSONObject
@@ -20,10 +24,11 @@ import java.io.File
 import javax.inject.Inject
 
 
-class WeekUseCase @Inject internal constructor(private val appExecutors: AppExecutors, private val iApi: IApi
-                                               ,private val iPlayerController: IPlayerController
-                                               ,private val  iDownloadController: IDownloadController
-) : DownloadAndPlayUseCase(iPlayerController,iDownloadController),IWeekUseCase {
+class WeekUseCase @Inject internal constructor(
+    private val appExecutors: AppExecutors, private val iApi: IApi
+    , private val iPlayerController: IPlayerController
+    , private val iDownloadController: IDownloadController
+) : DownloadAndPlayUseCase(iPlayerController, iDownloadController), IWeekUseCase {
 
     private var isCancle = false
     private var currentPosition = 0
@@ -135,13 +140,27 @@ class WeekUseCase @Inject internal constructor(private val appExecutors: AppExec
             val data = _listWeekChart.value
             data?.data?.run {
                 val listSongWeek = this[position].listWeekSong
-                for (item in listSongWeek){
-                    if (iDownloadController.checkItemNotUpdateUI(item.id)){
+                val listItem = getListIdPause()
+                val idPause = pauseId()
+                for (item in listSongWeek) {
+                    val downloadItem = DownloadData(item.id)
+                    if (iDownloadController.checkItemNotUpdateUI(item.id)) {
                         item.songStatus = PLAY
                         item.downloadStatus = NONE
                     }
-                    if (iPlayerController.checkPlayerNotUpdateUI(item.id)){
+                    if (iPlayerController.checkPlayerNotUpdateUI(item.id)) {
                         item.songStatus = PLAY
+                        item.downloadStatus = NONE
+                    }
+                    if (listItem.contains(downloadItem)) {
+                        val itemChild = listItem[listItem.indexOf(downloadItem)]
+                        item.songStatus = itemChild.songStatus
+                        item.downloadStatus = itemChild.downloadStatus
+                        item.errorResource = itemChild.errorResource
+                        item.progressDownload = itemChild.progress
+                    }
+                    if (idPause != -1 && item.id == idPause) {
+                        item.songStatus = PAUSE_SONG
                         item.downloadStatus = NONE
                     }
                 }

@@ -13,8 +13,8 @@ import nam.tran.data.model.WeekChart
 import tran.nam.common.DataBoundListAdapter
 import tran.nam.common.DataBoundViewHolder
 
-class WeekChartAdapter constructor(appExecutors: AppExecutors, private val dataBindingComponent: DataBindingComponent
-                                    ,var position : Int = 0, val week: (WeekChart, Int) -> Unit)
+open class WeekChartAdapter constructor(appExecutors: AppExecutors, private val dataBindingComponent: DataBindingComponent
+                                        , val week: (WeekChart, Int) -> Unit)
     : DataBoundListAdapter<WeekChart,AdapterWeekChartBinding>(appExecutors,object : DiffUtil.ItemCallback<WeekChart>(){
     override fun areItemsTheSame(oldItem: WeekChart, newItem: WeekChart): Boolean {
         return oldItem.id == newItem.id
@@ -24,6 +24,8 @@ class WeekChartAdapter constructor(appExecutors: AppExecutors, private val dataB
         return oldItem.name == newItem.name
     }
 }) {
+
+    open var position = 0
 
     override fun createBinding(parent: ViewGroup): AdapterWeekChartBinding {
         val binding : AdapterWeekChartBinding = DataBindingUtil.inflate(
@@ -55,9 +57,5 @@ class WeekChartAdapter constructor(appExecutors: AppExecutors, private val dataB
 
     override fun bind(binding: AdapterWeekChartBinding, item: WeekChart) {
         binding.week = item
-    }
-
-    fun getPositionSelect() : Int{
-        return position
     }
 }

@@ -19,7 +19,7 @@ class ChartSongViewModel @Inject internal constructor(
     var resultChild: LiveData<Resource<List<Song>>> = iWeekUseCase.listSongWeek
     var resultListDownload: LiveData<DownloadData> = iWeekUseCase.listSongDownload
     var resultPlay : LiveData<PlayerData> = iWeekUseCase.songPlayer
-    var isInitializer = false
+    var mPosition = -1
 
     fun resource(): Resource<*>? {
         return results.value
@@ -30,8 +30,10 @@ class ChartSongViewModel @Inject internal constructor(
     }
 
     fun getData(position : Int? = null, pathFolder: String? = null) {
+        if (position == null){
+            mPosition = 0
+        }
         iWeekUseCase.getData(position,pathFolder)
-        isInitializer = true
     }
 
     fun getDataExist(position: Int) {

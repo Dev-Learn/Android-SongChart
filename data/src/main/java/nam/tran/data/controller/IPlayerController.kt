@@ -10,4 +10,5 @@ interface IPlayerController {
     fun pauseSong()
     fun stopSong(id: Int)
     fun updateListPlayerUI(playerData: PlayerData)
+    fun pauseId() : Int
 }

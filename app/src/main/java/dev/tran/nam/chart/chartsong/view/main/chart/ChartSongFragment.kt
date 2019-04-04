@@ -60,33 +60,29 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
         val adapterSongWeek =
             SongAdapter(appExecutors, dataBindingComponent, { item, _ ->
                 run {
-                    if (item._songStatus == NONE_STATUS) {
-                        RxPermissions(this@ChartSongFragment)
-                            .request(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                            .subscribe {
-                                if (it) {
-                                    mViewModel?.songClick(item, folder.absolutePath)
-                                } else {
-                                    Logger.debug("All permissions were NOT granted.")
-                                    val alertDialogBuilder = AlertDialog.Builder(activity)
-                                    alertDialogBuilder.setMessage("You must allow permission to download")
-                                        .setCancelable(false)
-                                        .setPositiveButton("Ok") { dialog, _ ->
-                                            dialog.dismiss()
-                                            val intent = Intent()
-                                            intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                                            val uri = Uri.fromParts("package", requireActivity().packageName, null)
-                                            intent.data = uri
-                                            startActivity(intent)
-                                        }.setNegativeButton("Cancel") { dialog, _ ->
-                                            dialog.dismiss()
-                                        }
-                                    alertDialogBuilder.show()
-                                }
+                    RxPermissions(this@ChartSongFragment)
+                        .request(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        .subscribe {
+                            if (it) {
+                                mViewModel?.songClick(item, folder.absolutePath)
+                            } else {
+                                Logger.debug("All permissions were NOT granted.")
+                                val alertDialogBuilder = AlertDialog.Builder(activity)
+                                alertDialogBuilder.setMessage("You must allow permission to download")
+                                    .setCancelable(false)
+                                    .setPositiveButton("Ok") { dialog, _ ->
+                                        dialog.dismiss()
+                                        val intent = Intent()
+                                        intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                                        val uri = Uri.fromParts("package", requireActivity().packageName, null)
+                                        intent.data = uri
+                                        startActivity(intent)
+                                    }.setNegativeButton("Cancel") { dialog, _ ->
+                                        dialog.dismiss()
+                                    }
+                                alertDialogBuilder.show()
                             }
-                    } else {
-                        mViewModel?.songClick(item, folder.absolutePath)
-                    }
+                        }
                 }
             }, { item, _ ->
                 run {
@@ -94,7 +90,7 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
                 }
             }, { item, _ ->
                 run {
-                    mViewModel?.stopSong(item.id)
+                    mViewModel?.stopSong()
                 }
             }, {
                 it?.run {
@@ -146,12 +142,9 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
         mViewModel?.resultListDownload?.observe(viewLifecycleOwner, Observer {
             it?.run {
                 val index = adapterSongWeek.getPosition(id)
+                Logger.debug(this)
                 if (index != -1) {
                     adapterSongWeek.updateItemDownload(index, progress, songStatus, downloadStatus)
-                } else {
-                    if (songStatus == PLAY) {
-                        mViewModel?.updateSongDownloadCompleteNotUi(id)
-                    }
                 }
             }
         })
@@ -163,8 +156,6 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
                     val index = adapterSongWeek.getPosition(idOld!!)
                     if (index != -1) {
                         adapterSongWeek.updateItemPlay(index, PLAY)
-                    } else {
-                        mViewModel?.updateSongStatus(this)
                     }
                 }
                 val index = adapterSongWeek.getPosition(id)

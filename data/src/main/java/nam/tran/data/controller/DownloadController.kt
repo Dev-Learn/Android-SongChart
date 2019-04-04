@@ -6,7 +6,8 @@ import nam.tran.data.Logger
 import nam.tran.data.executor.AppExecutors
 import nam.tran.data.model.DownloadData
 import nam.tran.data.model.DownloadStatus
-import nam.tran.data.model.DownloadStatus.PAUSE
+import nam.tran.data.model.DownloadStatus.*
+import nam.tran.data.model.Song
 import nam.tran.data.model.SongStatus
 import nam.tran.data.model.SongStatus.*
 import nam.tran.data.model.core.state.ErrorResource
@@ -18,7 +19,7 @@ import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
-class DownloadController @Inject constructor(private val appExecutors: AppExecutors) : IDownloadController{
+class DownloadController @Inject constructor(private val appExecutors: AppExecutors) : IDownloadController {
 
     private val currentDownloadMap: MutableMap<Int, DownloadData> = ConcurrentHashMap()
     private var listDownloadNotUpdateUI = mutableListOf<Int>()
@@ -27,27 +28,34 @@ class DownloadController @Inject constructor(private val appExecutors: AppExecut
     override val listDownload: LiveData<DownloadData>
         get() = _listDownload
 
+    override fun updatePauseDownload(song: Song) {
+        if (!currentDownloadMap.containsKey(song.id)) {
+            currentDownloadMap[song.id] =
+                DownloadData(song.id, song.progressDownload, song.songStatus, song.downloadStatus, song.errorResource)
+        }
+    }
+
     override fun removeTaskDownload(item: DownloadData?) {
         Logger.debug("removeTaskDownload : $item")
         if (currentDownloadMap.containsValue(item))
             currentDownloadMap.remove(item?.id)
     }
 
-    override fun downloadMusic(id: Int, url: String, resume: Boolean,folderPath: String) {
+    override fun downloadMusic(id: Int, url: String, resume: Boolean, folderPath: String) {
         var fileDownLoad = DownloadData(id)
-        if (!currentDownloadMap.contains(id)){
+        if (!currentDownloadMap.contains(id)) {
             currentDownloadMap[id] = fileDownLoad
-        }else{
+        } else {
             fileDownLoad = currentDownloadMap.getValue(id)
-            fileDownLoad.songStatus = SongStatus.DOWNLOADING
-            fileDownLoad.downloadStatus = DownloadStatus.RUNNING
+            fileDownLoad.songStatus = DOWNLOADING
+            fileDownLoad.downloadStatus = RUNNING
         }
 
         appExecutors.networkIO().execute {
             val pathFile = folderPath.plus("/").plus(id).plus(".mp3")
             var fileLenght: Long = 0
             val file = File(pathFile)
-            if (file.exists()){
+            if (file.exists()) {
                 fileLenght = file.length()
             }
             Logger.debug("downloadMusic : fileLenght - $fileLenght")
@@ -55,7 +63,7 @@ class DownloadController @Inject constructor(private val appExecutors: AppExecut
             var isPause: Boolean = false
             try {
                 val connection = URL(url).openConnection() as HttpURLConnection
-                if (fileLenght > 0){
+                if (fileLenght > 0) {
                     connection.setRequestProperty("Range", "bytes=$fileLenght -")
                 }
                 connection.connect()
@@ -69,7 +77,7 @@ class DownloadController @Inject constructor(private val appExecutors: AppExecut
 
                 // download the file
                 val input = connection.inputStream
-                val output = FileOutputStream(pathFile,fileLenght > 0)
+                val output = FileOutputStream(pathFile, fileLenght > 0)
 
                 val buffer = ByteArray(100)
                 var total = 0
@@ -78,11 +86,12 @@ class DownloadController @Inject constructor(private val appExecutors: AppExecut
                 //https://stackoverflow.com/questions/6237079/resume-http-file-download-in-java
 
                 while (input.read(buffer, 0, 100).let { length = it; length > 0 }) {
-                    if (fileDownLoad.songStatus == SongStatus.CANCEL_DOWNLOAD) {
+                    Logger.debug(fileDownLoad)
+                    if (fileDownLoad.songStatus == CANCEL_DOWNLOAD) {
                         isCancel = true
                         break
                     }
-                    if (fileDownLoad.downloadStatus == DownloadStatus.PAUSE) {
+                    if (fileDownLoad.downloadStatus == PAUSE) {
                         isPause = true
                         break
                     }
@@ -100,10 +109,10 @@ class DownloadController @Inject constructor(private val appExecutors: AppExecut
                 Logger.debug(isCancel)
                 Logger.debug(isPause)
                 if (isCancel) {
-                    cancelComplete(fileDownLoad,pathFile)
-                } else if (isPause) {
-
-                } else {
+                    cancelComplete(fileDownLoad, pathFile)
+                }else if (isPause){
+                    pauseComplete(fileDownLoad)
+                }else {
                     downloadComplete(fileDownLoad)
                 }
             } catch (e: IOException) {
@@ -113,33 +122,25 @@ class DownloadController @Inject constructor(private val appExecutors: AppExecut
         }
     }
 
-    override fun updateStatusDownload(id: Int, status: Int,isDownload : Boolean,folderPath: String) {
+    override fun updateStatusDownload(id: Int, status: Int, isDownload: Boolean, folderPath: String) {
         if (currentDownloadMap.containsKey(id)) {
             val fileDownLoad = currentDownloadMap[id]
             fileDownLoad?.apply {
                 if (isDownload)
                     downloadStatus = status
-                else{
+                else {
                     songStatus = status
-                    if (songStatus == SongStatus.CANCEL_DOWNLOAD && downloadStatus == DownloadStatus.PAUSE){
-                        val listdata = _listDownload.value
-                        listdata?.run {
-                            val pathFile = folderPath.plus("/").plus(id).plus(".mp3")
-                            cancelComplete(fileDownLoad, pathFile)
-                        }
+                    if (songStatus == CANCEL_DOWNLOAD && downloadStatus == PAUSE) {
+                        val pathFile = folderPath.plus("/").plus(id).plus(".mp3")
+                        cancelComplete(fileDownLoad, pathFile)
                     }
                 }
             }
         }
     }
 
-    override fun updateSongDownloadCompleteNotUpdateUi(id: Int) {
-        listDownloadNotUpdateUI.add(id)
-    }
-
-    override fun checkItemNotUpdateUI(id: Int) : Boolean{
-        if (listDownloadNotUpdateUI.contains(id)){
-            listDownloadNotUpdateUI.remove(id)
+    override fun checkItemNotUpdateUI(id: Int): Boolean {
+        if (listDownloadNotUpdateUI.contains(id)) {
             return true
         }
         return false
@@ -150,8 +151,8 @@ class DownloadController @Inject constructor(private val appExecutors: AppExecut
         error: IOException
     ) {
         appExecutors.mainThread().execute {
-            fileDownLoad.songStatus = SongStatus.ERROR
-            fileDownLoad.downloadStatus = DownloadStatus.PAUSE
+            fileDownLoad.songStatus = ERROR
+            fileDownLoad.downloadStatus = PAUSE
             fileDownLoad.errorResource = ErrorResource(error.message)
             _listDownload.value = fileDownLoad
         }
@@ -162,8 +163,18 @@ class DownloadController @Inject constructor(private val appExecutors: AppExecut
     ) {
         appExecutors.mainThread().execute {
             removeTaskDownload(fileDownLoad)
-            fileDownLoad.songStatus = SongStatus.PLAY
-            fileDownLoad.downloadStatus = DownloadStatus.NONE
+            fileDownLoad.songStatus = PLAY
+            fileDownLoad.downloadStatus = NONE
+            listDownloadNotUpdateUI.add(fileDownLoad.id)
+            _listDownload.value = fileDownLoad
+        }
+    }
+
+    private fun pauseComplete(fileDownLoad: DownloadData){
+        appExecutors.mainThread().execute {
+            fileDownLoad.songStatus = DOWNLOADING
+            fileDownLoad.downloadStatus = PAUSE
+            Logger.debug("pauseComplete : fileDownLoad - $fileDownLoad")
             _listDownload.value = fileDownLoad
         }
     }
@@ -178,22 +189,28 @@ class DownloadController @Inject constructor(private val appExecutors: AppExecut
             Logger.debug("cancelComplete : delete - $result")
         }
         appExecutors.mainThread().execute {
-            fileDownLoad.songStatus = SongStatus.NONE_STATUS
-            fileDownLoad.downloadStatus = DownloadStatus.NONE
+            fileDownLoad.songStatus = NONE_STATUS
+            fileDownLoad.downloadStatus = NONE
             fileDownLoad.progress = 0
             Logger.debug("cancelComplete : fileDownLoad - $fileDownLoad")
             removeTaskDownload(fileDownLoad)
+            listDownloadNotUpdateUI.add(fileDownLoad.id)
             _listDownload.value = fileDownLoad
         }
     }
 
     override fun getListIdPause(): List<DownloadData> {
         val listId = mutableListOf<DownloadData>()
-        for ((k,v) in currentDownloadMap){
-            if ((v.songStatus == DOWNLOADING && v.downloadStatus == PAUSE) || (v.songStatus == ERROR && v.downloadStatus == PAUSE)){
+        for ((k, v) in currentDownloadMap) {
+            if ((v.songStatus == DOWNLOADING && v.downloadStatus == PAUSE) || (v.songStatus == ERROR && v.downloadStatus == PAUSE)) {
                 listId.add(v)
             }
         }
         return listId
+    }
+
+    override fun release() {
+        currentDownloadMap.clear()
+        listDownloadNotUpdateUI.clear()
     }
 }

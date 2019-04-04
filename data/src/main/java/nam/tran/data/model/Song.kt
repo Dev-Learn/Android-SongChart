@@ -3,14 +3,29 @@ package nam.tran.data.model
 import androidx.databinding.BaseObservable
 import androidx.databinding.Bindable
 import nam.tran.data.BR
+import nam.tran.data.model.DownloadStatus.PAUSE
+import nam.tran.data.model.SongStatus.DOWNLOADING
+import nam.tran.data.model.SongStatus.PLAY
 import nam.tran.data.model.core.state.ErrorResource
+import java.io.File
 
-data class Song(val id : Int, val name : String, val image : String
-                , val link128 : String, val link320 : String, val lossless : String, val link_local : String
-                , val singer : Singer?, @SongStatus var _songStatus: Int = SongStatus.NONE_STATUS, @DownloadStatus var _downloadStatus: Int = DownloadStatus.NONE,
-                var _progressDownload: Int,
-                var errorResource: ErrorResource? = null,
-                var _enableButton : Boolean = true) : BaseObservable(){
+data class Song(
+    val id: Int,
+    val idWeek: Int?,
+    val name: String,
+    val image: String,
+    val link128: String,
+    val link320: String,
+    val lossless: String,
+    val link_local: String,
+    val singer: Singer?,
+    var position: Int?,
+    val length: Long? = null,
+    @SongStatus var _songStatus: Int = SongStatus.NONE_STATUS, @DownloadStatus var _downloadStatus: Int = DownloadStatus.NONE,
+    var _progressDownload: Int,
+    var errorResource: ErrorResource? = null,
+    var _enableButton: Boolean = true
+) : BaseObservable() {
 
     @SongStatus
     var songStatus: Int
@@ -34,6 +49,26 @@ data class Song(val id : Int, val name : String, val image : String
             _progressDownload = value
             notifyPropertyChanged(BR.progressDownload)
         }
+
+    fun statusDownload(file: File): Int {
+        if (file.exists()) {
+            if (length != null) {
+                if (length == file.length()) {
+                    songStatus = PLAY
+                    return 1
+                } else {
+                    songStatus = DOWNLOADING
+                    downloadStatus = PAUSE
+                    progressDownload = (file.length() * 100 / length).toInt()
+                    return 2
+                }
+            } else {
+                songStatus = PLAY
+                return 1
+            }
+        }
+        return 0
+    }
 
     override fun equals(other: Any?): Boolean {
         return other is Song && other.id == id

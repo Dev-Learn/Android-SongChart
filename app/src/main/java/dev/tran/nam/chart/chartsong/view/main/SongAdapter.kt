@@ -20,11 +20,14 @@ class SongAdapter (
     , val stopMusicClick: (Song, Int) -> Unit, val singerClick: ((Singer?) -> Unit)? = null
 ) : DataBoundListAdapter<Song, AdapterSongWeekBinding>(appExecutors, object : DiffUtil.ItemCallback<Song>() {
     override fun areItemsTheSame(oldItem: Song, newItem: Song): Boolean {
-        return oldItem.id == newItem.id
+         val isSame = if(oldItem.idWeek != null && newItem.idWeek != null)
+             oldItem.idWeek == newItem.idWeek else true
+        return isSame && oldItem.id == newItem.id
     }
 
     override fun areContentsTheSame(oldItem: Song, newItem: Song): Boolean {
         return oldItem.songStatus == newItem.songStatus && oldItem.downloadStatus == newItem.downloadStatus
+                && oldItem.position == newItem.position
     }
 
 }) {

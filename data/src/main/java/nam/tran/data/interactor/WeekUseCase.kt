@@ -10,8 +10,7 @@ import nam.tran.data.executor.AppExecutors
 import nam.tran.data.model.DownloadData
 import nam.tran.data.model.DownloadStatus.NONE
 import nam.tran.data.model.Song
-import nam.tran.data.model.SongStatus.PAUSE_SONG
-import nam.tran.data.model.SongStatus.PLAY
+import nam.tran.data.model.SongStatus.*
 import nam.tran.data.model.WeekChart
 import nam.tran.data.model.WeekSong
 import nam.tran.data.model.core.state.ErrorResource
@@ -104,13 +103,14 @@ class WeekUseCase @Inject internal constructor(
                     val listWeekSong = response.body()
                     listWeekSong?.run {
                         val listSong = mutableListOf<Song>()
-                        for (song in this) {
-                            val file = File(folderPath.plus("/").plus(song.song.id).plus(".mp3"))
+                        for (item in this) {
+                            val song = item.song
+                            val file = File(folderPath.plus("/").plus(song.id).plus(".mp3"))
                             print(file)
-                            if (file.exists()) {
-                                song.song.songStatus = PLAY
-                            }
-                            listSong.add(song.song)
+                            if (song.statusDownload(file) == 2)
+                                updatePauseDownload(song)
+                            song.position = item.position
+                            listSong.add(song)
                         }
                         listDataWeekChart[position].listWeekSong = listSong
                         _listWeekChart.value = Resource.success(listDataWeekChart)
@@ -142,31 +142,38 @@ class WeekUseCase @Inject internal constructor(
                 val listSongWeek = this[position].listWeekSong
                 val listItem = getListIdPause()
                 val idPause = pauseId()
-                for (item in listSongWeek) {
-                    val downloadItem = DownloadData(item.id)
-                    if (iDownloadController.checkItemNotUpdateUI(item.id)) {
-                        item.songStatus = PLAY
-                        item.downloadStatus = NONE
+                for (it in listSongWeek) {
+                    val file = File(folderPath.plus("/").plus(it.id).plus(".mp3"))
+                    val downloadItem = DownloadData(it.id)
+
+                    if (it.songStatus != PLAY){
+                        it.songStatus = NONE_STATUS
+                        it.downloadStatus = NONE
+                        it.progressDownload = 0
                     }
-                    if (iPlayerController.checkPlayerNotUpdateUI(item.id)) {
-                        item.songStatus = PLAY
-                        item.downloadStatus = NONE
+
+                    if (iDownloadController.checkItemNotUpdateUI(it.id) && it.statusDownload(file) == 1) {
+                        it.songStatus = PLAY
+                        it.downloadStatus = NONE
+                    }
+                    if (iPlayerController.checkPlayerNotUpdateUI(it.id)) {
+                        it.songStatus = PLAY
+                        it.downloadStatus = NONE
                     }
                     if (listItem.contains(downloadItem)) {
                         val itemChild = listItem[listItem.indexOf(downloadItem)]
-                        item.songStatus = itemChild.songStatus
-                        item.downloadStatus = itemChild.downloadStatus
-                        item.errorResource = itemChild.errorResource
-                        item.progressDownload = itemChild.progress
+                        it.songStatus = itemChild.songStatus
+                        it.downloadStatus = itemChild.downloadStatus
+                        it.errorResource = itemChild.errorResource
+                        it.progressDownload = itemChild.progress
                     }
-                    if (idPause != -1 && item.id == idPause) {
-                        item.songStatus = PAUSE_SONG
-                        item.downloadStatus = NONE
+                    if (idPause != -1 && it.id == idPause) {
+                        it.songStatus = PAUSE_SONG
+                        it.downloadStatus = NONE
                     }
                 }
                 _listSongWeek.postValue(Resource.success(listSongWeek))
             }
         }
     }
-
 }

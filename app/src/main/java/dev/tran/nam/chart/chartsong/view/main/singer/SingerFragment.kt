@@ -45,44 +45,43 @@ class SingerFragment : BaseFragmentVM<FragmentSingerBinding, SingerViewModel>() 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         mViewDataBinding?.viewModel = mViewModel
 
-        arguments?.run {
-            val singer = getSerializable("singer") as Singer
-            tv_singer.text = singer.name
-            mViewModel?.getData(
-                singer.id, folderPath
-            )
-        }
+        if (savedInstanceState == null)
+            arguments?.run {
+                val singer = getSerializable("singer") as Singer
+                tv_singer.text = singer.name
+                mViewModel?.getData(
+                    singer.id, folderPath
+                )
+            }
+        else
+            tv_singer.text = savedInstanceState.getString("titleSinger")
 
         val adapterSongWeek =
             SongAdapter(appExecutors, dataBindingComponent, { item, _ ->
                 run {
-                    if (item._songStatus == SongStatus.NONE_STATUS) {
-                        RxPermissions(this@SingerFragment)
-                            .request(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                            .subscribe {
-                                if (it) {
-                                    mViewModel?.songClick(item, folderPath)
-                                } else {
-                                    Logger.debug("All permissions were NOT granted.")
-                                    val alertDialogBuilder = AlertDialog.Builder(activity)
-                                    alertDialogBuilder.setMessage("You must allow permission to download")
-                                        .setCancelable(false)
-                                        .setPositiveButton("Ok") { dialog, _ ->
-                                            dialog.dismiss()
-                                            val intent = Intent()
-                                            intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                                            val uri = Uri.fromParts("package", requireActivity().packageName, null)
-                                            intent.data = uri
-                                            startActivity(intent)
-                                        }.setNegativeButton("Cancel") { dialog, _ ->
-                                            dialog.dismiss()
-                                        }
-                                    alertDialogBuilder.show()
-                                }
+                    RxPermissions(this@SingerFragment)
+                        .request(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        .subscribe {
+                            if (it) {
+                                mViewModel?.songClick(item, folderPath)
+                            } else {
+                                Logger.debug("All permissions were NOT granted.")
+                                val alertDialogBuilder = AlertDialog.Builder(activity)
+                                alertDialogBuilder.setMessage("You must allow permission to download")
+                                    .setCancelable(false)
+                                    .setPositiveButton("Ok") { dialog, _ ->
+                                        dialog.dismiss()
+                                        val intent = Intent()
+                                        intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                                        val uri = Uri.fromParts("package", requireActivity().packageName, null)
+                                        intent.data = uri
+                                        startActivity(intent)
+                                    }.setNegativeButton("Cancel") { dialog, _ ->
+                                        dialog.dismiss()
+                                    }
+                                alertDialogBuilder.show()
                             }
-                    } else {
-                        mViewModel?.songClick(item, folderPath)
-                    }
+                        }
                 }
             }, { item, _ ->
                 run {
@@ -90,7 +89,7 @@ class SingerFragment : BaseFragmentVM<FragmentSingerBinding, SingerViewModel>() 
                 }
             }, { item, _ ->
                 run {
-                    mViewModel?.stopSong(item.id)
+                    mViewModel?.stopSong()
                 }
             })
         mViewDataBinding?.rvSongWeek?.adapter = adapterSongWeek
@@ -109,10 +108,6 @@ class SingerFragment : BaseFragmentVM<FragmentSingerBinding, SingerViewModel>() 
                 val index = adapterSongWeek.getPosition(id)
                 if (index != -1) {
                     adapterSongWeek.updateItemDownload(index, progress, songStatus, downloadStatus)
-                } else {
-                    if (songStatus == SongStatus.PLAY) {
-                        mViewModel?.updateSongDownloadCompleteNotUi(id)
-                    }
                 }
             }
         })
@@ -124,8 +119,6 @@ class SingerFragment : BaseFragmentVM<FragmentSingerBinding, SingerViewModel>() 
                     val index = adapterSongWeek.getPosition(idOld!!)
                     if (index != -1) {
                         adapterSongWeek.updateItemPlay(index, SongStatus.PLAY)
-                    } else {
-                        mViewModel?.updateSongStatus(this)
                     }
                 }
                 val index = adapterSongWeek.getPosition(id)
@@ -134,5 +127,10 @@ class SingerFragment : BaseFragmentVM<FragmentSingerBinding, SingerViewModel>() 
                 }
             }
         })
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("titleSinger",tv_singer.text.toString())
     }
 }

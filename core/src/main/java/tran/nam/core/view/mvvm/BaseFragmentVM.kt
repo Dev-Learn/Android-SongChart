@@ -17,7 +17,6 @@
 package tran.nam.core.view.mvvm
 
 import android.content.Context
-import android.os.Handler
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -47,9 +46,6 @@ abstract class BaseFragmentVM<V : ViewDataBinding, VM : BaseFragmentViewModel> :
 
     var binding by autoCleared<V>()
 
-    private var handler: Handler? = null
-    private var runnable: Runnable? = null
-
     abstract fun initViewModel(factory: ViewModelProvider.Factory?)
 
     override fun onAttach(context: Context) {
@@ -64,17 +60,8 @@ abstract class BaseFragmentVM<V : ViewDataBinding, VM : BaseFragmentViewModel> :
         return binding.root
     }
 
-    open fun navigation(navigator: (() -> Unit)) {
-        handler = Handler()
-        runnable = Runnable {
-            navigator()
-        }
-        handler?.postDelayed(runnable, 300)
-    }
-
     override fun onDestroy() {
         this.mViewDataBinding?.unbind()
-        handler?.removeCallbacks(runnable)
         super.onDestroy()
     }
 

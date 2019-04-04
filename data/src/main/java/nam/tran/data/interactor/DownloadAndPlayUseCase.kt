@@ -5,6 +5,7 @@ import nam.tran.data.controller.IDownloadController
 import nam.tran.data.controller.IPlayerController
 import nam.tran.data.model.DownloadData
 import nam.tran.data.model.PlayerData
+import nam.tran.data.model.Song
 
 open class DownloadAndPlayUseCase constructor(private val iPlayerController: IPlayerController
                                               , private val iDownloadController: IDownloadController) : IDownloadAndPlayUseCase{
@@ -16,16 +17,16 @@ open class DownloadAndPlayUseCase constructor(private val iPlayerController: IPl
     override val songPlayer: LiveData<PlayerData>
         get() = iPlayerController.player
 
+    override fun updatePauseDownload(song: Song) {
+        iDownloadController.updatePauseDownload(song)
+    }
+
     override fun downloadMusic(id: Int, url: String, resume: Boolean) {
         iDownloadController.downloadMusic(id,url,resume,folderPath)
     }
 
     override fun removeTaskDownload(item: DownloadData?) {
         iDownloadController.removeTaskDownload(item)
-    }
-
-    override fun updateSongDownloadCompleteNotUpdateUi(id: Int) {
-        iDownloadController.updateSongDownloadCompleteNotUpdateUi(id)
     }
 
     override fun updateStatusDownload(id: Int, status: Int, isDownload: Boolean) {
@@ -40,12 +41,8 @@ open class DownloadAndPlayUseCase constructor(private val iPlayerController: IPl
         iPlayerController.pauseSong()
     }
 
-    override fun stopSong(id: Int) {
-        iPlayerController.stopSong(id)
-    }
-
-    override fun updateSongStatus(playerData: PlayerData) {
-        iPlayerController.updateListPlayerUI(playerData)
+    override fun stopSong() {
+        iPlayerController.stopSong()
     }
 
     override fun getListIdPause(): List<DownloadData> {
@@ -54,5 +51,10 @@ open class DownloadAndPlayUseCase constructor(private val iPlayerController: IPl
 
     override fun pauseId(): Int {
         return iPlayerController.pauseId()
+    }
+
+    override fun releaseController() {
+        iPlayerController.release()
+        iDownloadController.release()
     }
 }

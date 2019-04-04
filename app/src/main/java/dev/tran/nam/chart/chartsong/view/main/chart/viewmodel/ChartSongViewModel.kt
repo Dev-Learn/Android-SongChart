@@ -5,6 +5,7 @@ import androidx.lifecycle.LiveData
 import dev.tran.nam.chart.chartsong.controller.NotificationController
 import nam.tran.data.interactor.IWeekUseCase
 import nam.tran.data.model.*
+import nam.tran.data.model.DownloadStatus.*
 import nam.tran.data.model.core.state.Resource
 import tran.nam.core.viewmodel.BaseFragmentViewModel
 import javax.inject.Inject
@@ -52,31 +53,23 @@ class ChartSongViewModel @Inject internal constructor(
         iWeekUseCase.playSong(name,id,path)
     }
 
-    fun stopSong(id: Int) {
-        iWeekUseCase.stopSong(id)
+    fun stopSong() {
+        iWeekUseCase.stopSong()
     }
 
     fun pauseSong() {
         iWeekUseCase.pauseSong()
     }
 
-    fun updateSongStatus(playerData: PlayerData) {
-        iWeekUseCase.updateSongStatus(playerData)
-    }
-
-    fun updateSongDownloadCompleteNotUi(id: Int) {
-        iWeekUseCase.updateSongDownloadCompleteNotUpdateUi(id)
-    }
-
     fun songClick(item: Song,folder: String) {
         when (item.songStatus) {
             SongStatus.NONE_STATUS -> {
                 item.songStatus = SongStatus.DOWNLOADING
-                item.downloadStatus = DownloadStatus.RUNNING
+                item.downloadStatus = RUNNING
                 downloadSong(item)
             }
             SongStatus.DOWNLOADING, SongStatus.ERROR -> {
-                if (item.downloadStatus == DownloadStatus.RUNNING){
+                if (item.downloadStatus == RUNNING){
                     item.songStatus = SongStatus.CANCELING_DOWNLOAD
                 }
                 updateStatus(item.id, SongStatus.CANCEL_DOWNLOAD)
@@ -95,20 +88,18 @@ class ChartSongViewModel @Inject internal constructor(
         }
     }
 
-    fun downloadStatusClick(item: Song) {
-        when (item.downloadStatus) {
-            DownloadStatus.RUNNING -> {
-                item.downloadStatus = DownloadStatus.PAUSE
-                updateStatus(item.id, DownloadStatus.PAUSE, true)
-            }
-            DownloadStatus.PAUSE -> {
-                item.downloadStatus = DownloadStatus.RUNNING
-                downloadSong(item, true)
-            }
-            DownloadStatus.NONE -> {
-            }
-            else -> {
-            }
+    fun downloadStatusClick(item: Song) = when (item.downloadStatus) {
+        RUNNING -> {
+            item.downloadStatus = PAUSE
+            updateStatus(item.id, PAUSE, true)
+        }
+        PAUSE -> {
+            item.downloadStatus = RUNNING
+            downloadSong(item, true)
+        }
+        NONE -> {
+        }
+        else -> {
         }
     }
 
@@ -117,5 +108,13 @@ class ChartSongViewModel @Inject internal constructor(
             mNotificationController.clearNotification(playerData.id)
         else
             mNotificationController.updatePlayerSong(playerData.id, playerData.name, playerData.progress, playerData.total)
+
+        if (playerData.idOld != null)
+            mNotificationController.clearNotification(playerData.idOld!!)
+    }
+
+    override fun onCleared() {
+        mNotificationController.clearAllNotification()
+        android.os.Process.killProcess(android.os.Process.myPid())
     }
 }

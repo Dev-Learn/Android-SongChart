@@ -8,7 +8,7 @@ interface IPlayerController {
     fun checkPlayerNotUpdateUI(id : Int) : Boolean
     fun playSong(name: String, id: Int,pathFolder : String?)
     fun pauseSong()
-    fun stopSong(id: Int)
-    fun updateListPlayerUI(playerData: PlayerData)
+    fun stopSong()
     fun pauseId() : Int
+    fun release()
 }

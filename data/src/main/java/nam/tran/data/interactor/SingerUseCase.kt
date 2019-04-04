@@ -51,11 +51,10 @@ class SingerUseCase @Inject internal constructor(
                         forEach {
                             val file = File(folderPath.plus("/").plus(it.id).plus(".mp3"))
                             print(file)
-                            if (file.exists()) {
-                                it.songStatus = SongStatus.PLAY
-                            }
+                            if (it.statusDownload(file) == 2)
+                                updatePauseDownload(it)
                             val downloadItem = DownloadData(it.id)
-                            if (iDownloadController.checkItemNotUpdateUI(it.id)) {
+                            if (iDownloadController.checkItemNotUpdateUI(it.id) && it.statusDownload(file) == 1) {
                                 it.songStatus = SongStatus.PLAY
                                 it.downloadStatus = DownloadStatus.NONE
                             }

@@ -38,20 +38,12 @@ class SingerViewModel @Inject internal constructor(
         iSingerUseCase.playSong(name, id, path)
     }
 
-    fun stopSong(id: Int) {
-        iSingerUseCase.stopSong(id)
+    fun stopSong() {
+        iSingerUseCase.stopSong()
     }
 
     fun pauseSong() {
         iSingerUseCase.pauseSong()
-    }
-
-    fun updateSongStatus(playerData: PlayerData) {
-        iSingerUseCase.updateSongStatus(playerData)
-    }
-
-    fun updateSongDownloadCompleteNotUi(id: Int) {
-        iSingerUseCase.updateSongDownloadCompleteNotUpdateUi(id)
     }
 
     fun songClick(item: Song, folder: String) {
@@ -108,5 +100,8 @@ class SingerViewModel @Inject internal constructor(
                 playerData.progress,
                 playerData.total
             )
+
+        if (playerData.idOld != null)
+            mNotificationController.clearNotification(playerData.idOld!!)
     }
 }

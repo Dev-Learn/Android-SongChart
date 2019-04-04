@@ -58,4 +58,8 @@ class NotificationController @Inject constructor(mApp: Application) {
     fun clearNotification(id : Int){
         notificationManager.cancel(id)
     }
+
+    fun clearAllNotification(){
+        notificationManager.cancelAll()
+    }
 }

@@ -28,7 +28,6 @@ class PlayerController @Inject constructor() : IPlayerController {
 
     override fun checkPlayerNotUpdateUI(id : Int): Boolean {
         if (_listPlayerNotUpdateUi.contains(id)){
-            _listPlayerNotUpdateUi.remove(id)
             return true
         }
         return false
@@ -73,7 +72,7 @@ class PlayerController @Inject constructor() : IPlayerController {
 
         mPlayer.setDataSource(folderPath.plus("/").plus(id).plus(".mp3"))
         mPlayer.setOnCompletionListener {
-            stopSong(mPlayerData!!.id)
+            stopSong()
         }
         mPlayer.setOnPreparedListener {
             mHandler.postDelayed(mUpdateTimeTask, 100)
@@ -93,11 +92,12 @@ class PlayerController @Inject constructor() : IPlayerController {
         }
     }
 
-    override fun stopSong(id: Int) {
+    override fun stopSong() {
         isPause = false
         currentPosition = 0
         mPlayer.reset()
         mHandler.removeCallbacks(mUpdateTimeTask)
+        _listPlayerNotUpdateUi.add(mPlayerData!!.id)
         mPlayerData?.idOld = null
         mPlayerData?.songStatus = PLAY
         _player.value = mPlayerData
@@ -107,6 +107,9 @@ class PlayerController @Inject constructor() : IPlayerController {
         isPause = false
         currentPosition = 0
         mHandler.removeCallbacks(mUpdateTimeTask)
+        if (_listPlayerNotUpdateUi.contains(id)){
+            _listPlayerNotUpdateUi.remove(id)
+        }
         if (mPlayerData == null)
             mPlayerData = PlayerData(id)
         else{
@@ -120,12 +123,15 @@ class PlayerController @Inject constructor() : IPlayerController {
         mPlayerData!!.progress = 0
     }
 
-    override fun updateListPlayerUI(playerData: PlayerData) {
-        _listPlayerNotUpdateUi.add(playerData.idOld!!)
-    }
-
     override fun pauseId(): Int {
         return if (mPlayerData?.songStatus == PAUSE_SONG) mPlayerData!!.id else -1
     }
 
+    override fun release() {
+        mPlayerData?.run {
+            stopSong()
+            _listPlayerNotUpdateUi.clear()
+            null
+        }
+    }
 }

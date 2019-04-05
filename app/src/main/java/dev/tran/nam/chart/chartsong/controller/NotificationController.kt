@@ -43,6 +43,7 @@ class NotificationController @Inject constructor(mApp: Application) {
 
         mBuilder = NotificationCompat.Builder(mApp, ANDROID_CHANNEL_ID)
         mBuilder.setContentTitle("Player Song")
+        mBuilder.setOnlyAlertOnce(true)
         mBuilder.setOngoing(true)
     }
 

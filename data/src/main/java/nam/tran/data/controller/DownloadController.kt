@@ -79,13 +79,13 @@ class DownloadController @Inject constructor(private val appExecutors: AppExecut
                 val input = connection.inputStream
                 val output = FileOutputStream(pathFile, fileLenght > 0)
 
-                val buffer = ByteArray(100)
+                val buffer = ByteArray(8024)
                 var total = 0
                 var length: Int
 
                 //https://stackoverflow.com/questions/6237079/resume-http-file-download-in-java
 
-                while (input.read(buffer, 0, 100).let { length = it; length > 0 }) {
+                while (input.read(buffer, 0, 8024).let { length = it; length > 0 }) {
                     Logger.debug(fileDownLoad)
                     if (fileDownLoad.songStatus == CANCEL_DOWNLOAD) {
                         isCancel = true
@@ -116,7 +116,7 @@ class DownloadController @Inject constructor(private val appExecutors: AppExecut
                     downloadComplete(fileDownLoad)
                 }
             } catch (e: IOException) {
-                Logger.debug(e)
+//                Logger.debug(e)
                 downloadError(fileDownLoad, e)
             }
         }
@@ -153,7 +153,7 @@ class DownloadController @Inject constructor(private val appExecutors: AppExecut
         appExecutors.mainThread().execute {
             fileDownLoad.songStatus = ERROR
             fileDownLoad.downloadStatus = PAUSE
-            fileDownLoad.errorResource = ErrorResource(error.message)
+            fileDownLoad.errorResource = ErrorResource(message = error.message)
             _listDownload.value = fileDownLoad
         }
     }

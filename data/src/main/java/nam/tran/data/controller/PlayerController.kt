@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData
 import nam.tran.data.Logger
 import nam.tran.data.model.PlayerData
 import nam.tran.data.model.SongStatus.*
+import nam.tran.data.model.core.state.ErrorResource
 import java.lang.IllegalStateException
 import javax.inject.Inject
 
@@ -78,6 +79,15 @@ class PlayerController @Inject constructor() : IPlayerController {
             mHandler.postDelayed(mUpdateTimeTask, 100)
             it.start()
         }
+        mPlayer.setOnErrorListener(object : MediaPlayer.OnErrorListener{
+            override fun onError(mp: MediaPlayer?, what: Int, extra: Int): Boolean {
+                Logger.debug(what)
+                Logger.debug(extra)
+                mPlayerData?.errorResource = ErrorResource("Error When Play")
+                _player.value = mPlayerData
+                return false
+            }
+        })
         mPlayer.prepareAsync();
     }
 
@@ -121,6 +131,7 @@ class PlayerController @Inject constructor() : IPlayerController {
         mPlayerData!!.name = name
         mPlayerData!!.songStatus = PLAYING
         mPlayerData!!.progress = 0
+        mPlayerData?.errorResource = null
     }
 
     override fun pauseId(): Int {

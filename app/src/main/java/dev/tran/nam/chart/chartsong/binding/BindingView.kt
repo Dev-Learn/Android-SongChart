@@ -1,6 +1,7 @@
 package dev.tran.nam.chart.chartsong.binding
 
 import androidx.appcompat.widget.AppCompatImageView
+import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.content.ContextCompat
 import androidx.databinding.BindingAdapter
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
@@ -12,6 +13,7 @@ import nam.tran.data.model.DownloadStatus
 import nam.tran.data.model.DownloadStatus.*
 import nam.tran.data.model.SongStatus
 import nam.tran.data.model.SongStatus.*
+import nam.tran.data.model.core.state.ErrorResource
 
 object BindingView {
     @JvmStatic
@@ -68,5 +70,13 @@ object BindingView {
             }
         }
         image.setImageDrawable(drawable)
+    }
+
+    @JvmStatic
+    @BindingAdapter("updateErrorDownload")
+    fun updateErrorDownload(textView : AppCompatTextView,errorResource: ErrorResource?){
+        errorResource?.run {
+            textView.text = String.format(textView.resources.getString(R.string.error), message)
+        }
     }
 }

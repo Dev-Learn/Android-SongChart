@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
 import android.view.View
+import android.widget.Toast
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
@@ -19,7 +20,6 @@ import dev.tran.nam.chart.chartsong.view.main.SongAdapter
 import dev.tran.nam.chart.chartsong.view.main.chart.viewmodel.ChartSongViewModel
 import nam.tran.data.Logger
 import nam.tran.data.executor.AppExecutors
-import nam.tran.data.model.SongStatus.NONE_STATUS
 import nam.tran.data.model.SongStatus.PLAY
 import tran.nam.core.biding.FragmentDataBindingComponent
 import tran.nam.core.view.mvvm.BaseFragmentVM
@@ -36,7 +36,7 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
 
     private lateinit var adapterWeekChart: WeekChartAdapter
 
-    private lateinit var folder : File
+    private lateinit var folder: File
 
     override fun initViewModel(factory: ViewModelProvider.Factory?) {
         mViewModel = ViewModelProviders.of(this, factory).get(ChartSongViewModel::class.java)
@@ -144,7 +144,7 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
                 val index = adapterSongWeek.getPosition(id)
                 Logger.debug(this)
                 if (index != -1) {
-                    adapterSongWeek.updateItemDownload(index, progress, songStatus, downloadStatus)
+                    adapterSongWeek.updateItemDownload(index, progress, songStatus, downloadStatus, errorResource)
                 }
             }
         })
@@ -158,6 +158,9 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
                         adapterSongWeek.updateItemPlay(index, PLAY)
                     }
                 }
+                if (errorResource != null) {
+                    Toast.makeText(requireContext(), errorResource!!.message, Toast.LENGTH_SHORT).show()
+                }
                 val index = adapterSongWeek.getPosition(id)
                 if (index != -1) {
                     adapterSongWeek.updateItemPlay(index, songStatus)
@@ -170,7 +173,7 @@ class ChartSongFragment : BaseFragmentVM<FragmentChartWeekBinding, ChartSongView
         super.onActivityCreated(savedInstanceState)
         if (savedInstanceState == null && mViewModel?.mPosition == -1) {
             mViewModel?.getData(pathFolder = folder.absolutePath)
-        }else{
+        } else {
             savedInstanceState?.getInt("weekSelect", 0).run {
                 adapterWeekChart.position = mViewModel?.mPosition ?: 0
             }

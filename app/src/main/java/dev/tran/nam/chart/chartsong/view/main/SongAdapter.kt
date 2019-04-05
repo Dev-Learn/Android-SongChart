@@ -11,6 +11,7 @@ import dev.tran.nam.chart.chartsong.databinding.AdapterSongWeekBinding
 import nam.tran.data.executor.AppExecutors
 import nam.tran.data.model.Singer
 import nam.tran.data.model.Song
+import nam.tran.data.model.core.state.ErrorResource
 import tran.nam.common.DataBoundListAdapter
 import tran.nam.common.DataBoundViewHolder
 
@@ -75,11 +76,14 @@ class SongAdapter (
         binding.song = item
     }
 
-    fun updateItemDownload(index: Int, progressDownload : Int, songStatus : Int, downloadStatus : Int) {
+    fun updateItemDownload(index: Int, progressDownload : Int, songStatus : Int, downloadStatus : Int,errorResource: ErrorResource?) {
         val data = getItem(index)
         data.progressDownload = progressDownload
         data.downloadStatus = downloadStatus
         data.songStatus = songStatus
+        errorResource?.run {
+            data.errorResource = this
+        }
     }
 
     fun updateItemPlay(index: Int, songStatus : Int) {

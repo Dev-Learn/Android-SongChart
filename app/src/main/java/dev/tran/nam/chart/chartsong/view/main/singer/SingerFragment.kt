@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
 import android.view.View
+import android.widget.Toast
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
@@ -107,7 +108,7 @@ class SingerFragment : BaseFragmentVM<FragmentSingerBinding, SingerViewModel>() 
             it?.run {
                 val index = adapterSongWeek.getPosition(id)
                 if (index != -1) {
-                    adapterSongWeek.updateItemDownload(index, progress, songStatus, downloadStatus)
+                    adapterSongWeek.updateItemDownload(index, progress, songStatus, downloadStatus,errorResource)
                 }
             }
         })
@@ -120,6 +121,9 @@ class SingerFragment : BaseFragmentVM<FragmentSingerBinding, SingerViewModel>() 
                     if (index != -1) {
                         adapterSongWeek.updateItemPlay(index, SongStatus.PLAY)
                     }
+                }
+                if (errorResource != null){
+                    Toast.makeText(requireContext(),errorResource!!.message, Toast.LENGTH_SHORT).show()
                 }
                 val index = adapterSongWeek.getPosition(id)
                 if (index != -1) {

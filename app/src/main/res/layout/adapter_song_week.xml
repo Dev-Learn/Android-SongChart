@@ -130,7 +130,7 @@
                 android:visibility="@{song.songStatus == SongStatus.ERROR ? View.VISIBLE : View.GONE}"
                 android:padding="@dimen/positive_10dp"
                 android:textColor="@android:color/black"
-                android:text="@{String.format(@string/error, song.errorResource.message)}"
+                app:updateErrorDownload="@{song.errorResource}"
                 app:layout_constraintTop_toBottomOf="@+id/progress_download"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"/>

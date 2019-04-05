@@ -41,7 +41,7 @@ open class AppExecutors(
     @Inject
     constructor() : this(
         Executors.newSingleThreadExecutor(),
-        Executors.newFixedThreadPool(4),
+        Executors.newFixedThreadPool(5),
         MainThreadExecutor()
     )
 

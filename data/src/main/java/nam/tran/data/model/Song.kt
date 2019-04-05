@@ -23,7 +23,7 @@ data class Song(
     val length: Long? = null,
     @SongStatus var _songStatus: Int = SongStatus.NONE_STATUS, @DownloadStatus var _downloadStatus: Int = DownloadStatus.NONE,
     var _progressDownload: Int,
-    var errorResource: ErrorResource? = null,
+    var _errorResource: ErrorResource? = null,
     var _enableButton: Boolean = true
 ) : BaseObservable() {
 
@@ -48,6 +48,13 @@ data class Song(
         set(value) {
             _progressDownload = value
             notifyPropertyChanged(BR.progressDownload)
+        }
+
+    var errorResource: ErrorResource?
+        @Bindable get() = _errorResource
+        set(value) {
+            _errorResource = value
+            notifyPropertyChanged(BR.errorResource)
         }
 
     fun statusDownload(file: File): Int {

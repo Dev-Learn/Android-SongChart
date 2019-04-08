@@ -12,6 +12,6 @@ interface IDownloadController {
     fun updateStatusDownload(id: Int, status: Int, isDownload: Boolean, folderPath: String)
     fun checkItemNotUpdateUI(id: Int) : Boolean
     fun removeTaskDownload(item: DownloadData?)
-    fun getListIdPause() : List<DownloadData>
+    fun getListDownload() : List<DownloadData>
     fun release()
 }

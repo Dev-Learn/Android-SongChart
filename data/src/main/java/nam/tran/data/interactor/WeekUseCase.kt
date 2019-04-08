@@ -140,17 +140,11 @@ class WeekUseCase @Inject internal constructor(
             val data = _listWeekChart.value
             data?.data?.run {
                 val listSongWeek = this[position].listWeekSong
-                val listItem = getListIdPause()
+                val listItem = getListDownload()
                 val idPause = pauseId()
                 for (it in listSongWeek) {
                     val file = File(folderPath.plus("/").plus(it.id).plus(".mp3"))
                     val downloadItem = DownloadData(it.id)
-
-                    if (it.songStatus != PLAY){
-                        it.songStatus = NONE_STATUS
-                        it.downloadStatus = NONE
-                        it.progressDownload = 0
-                    }
 
                     if (iDownloadController.checkItemNotUpdateUI(it.id) && it.statusDownload(file) == 1) {
                         it.songStatus = PLAY

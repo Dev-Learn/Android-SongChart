@@ -199,14 +199,8 @@ class DownloadController @Inject constructor(private val appExecutors: AppExecut
         }
     }
 
-    override fun getListIdPause(): List<DownloadData> {
-        val listId = mutableListOf<DownloadData>()
-        for ((k, v) in currentDownloadMap) {
-            if ((v.songStatus == DOWNLOADING && v.downloadStatus == PAUSE) || (v.songStatus == ERROR && v.downloadStatus == PAUSE)) {
-                listId.add(v)
-            }
-        }
-        return listId
+    override fun getListDownload(): List<DownloadData> {
+        return currentDownloadMap.values.toList()
     }
 
     override fun release() {

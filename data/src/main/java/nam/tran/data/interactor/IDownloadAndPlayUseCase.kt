@@ -15,7 +15,7 @@ interface IDownloadAndPlayUseCase{
     fun playSong(name: String, id: Int, path: String?)
     fun stopSong()
     fun pauseSong()
-    fun getListIdPause() : List<DownloadData>
+    fun getListDownload() : List<DownloadData>
     fun pauseId() : Int
     fun releaseController()
 }

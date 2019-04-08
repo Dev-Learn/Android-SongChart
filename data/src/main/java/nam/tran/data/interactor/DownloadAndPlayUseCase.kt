@@ -45,8 +45,8 @@ open class DownloadAndPlayUseCase constructor(private val iPlayerController: IPl
         iPlayerController.stopSong()
     }
 
-    override fun getListIdPause(): List<DownloadData> {
-        return iDownloadController.getListIdPause()
+    override fun getListDownload(): List<DownloadData> {
+        return iDownloadController.getListDownload()
     }
 
     override fun pauseId(): Int {

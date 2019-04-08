@@ -46,7 +46,7 @@ class SingerUseCase @Inject internal constructor(
                 if (response.isSuccessful) {
                     val body = response.body()
                     body?.run {
-                        val listItem = getListIdPause()
+                        val listItem = getListDownload()
                         val idPause = pauseId()
                         forEach {
                             val file = File(folderPath.plus("/").plus(it.id).plus(".mp3"))
